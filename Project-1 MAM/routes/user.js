@@ -79,5 +79,9 @@ router.post(
 // ===== MERN / React =====
 router.post("/logout", userController.logout);
 
+router.get("/current-user", (req, res) => {
+  res.json(req.user || null);
+});
+
 
 module.exports = router;
