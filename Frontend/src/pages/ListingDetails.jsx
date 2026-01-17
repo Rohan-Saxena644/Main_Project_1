@@ -18,12 +18,32 @@ export default function ListingDetails() {
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(5);
 
+  const mapContainer = useRef(null);
+
   // Fetch listing
   useEffect(() => {
     api.get(`/listings/${id}`)
       .then(res => setListing(res.data))
       .catch(() => navigate("/notfound"));
   }, [id, navigate]);
+
+  useEffect(() => {
+  if (!listing) return;
+
+  const map = new mapboxgl.Map({
+    container: mapContainer.current,
+    style: "mapbox://styles/mapbox/streets-v11",
+    center: listing.geometry.coordinates,
+    zoom: 9
+  });
+
+  new mapboxgl.Marker()
+    .setLngLat(listing.geometry.coordinates)
+    .addTo(map);
+
+  return () => map.remove();
+}, [listing]);
+
 
   // Add review
   const handleReviewSubmit = async (e) => {
@@ -150,6 +170,15 @@ export default function ListingDetails() {
       ) : (
         <p className="mt-6 text-gray-500">Login to add a review.</p>
       )}
+
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-2">Location</h2>
+        <div 
+            ref={mapContainer} 
+            className="w-full h-64 rounded"
+        />
+      </div>
+
     </div>
   );
 }
