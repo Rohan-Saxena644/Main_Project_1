@@ -27,13 +27,39 @@ export default function ListingDetails() {
       .catch(() => navigate("/notfound"));
   }, [id, navigate]);
 
-  useEffect(() => {
-  if (!listing) return;
+//   useEffect(() => {
+//   if (!listing) return;
+
+//   const map = new mapboxgl.Map({
+//     container: mapContainer.current,
+//     style: "mapbox://styles/mapbox/streets-v11",
+//     center: listing.geometry?.coordinates,
+//     zoom: 9
+//   });
+
+//   new mapboxgl.Marker()
+//     .setLngLat(listing.geometry?.coordinates)
+//     .addTo(map);
+
+//   return () => map.remove();
+// }, [listing]);
+
+
+useEffect(() => {
+  // HARD GUARD — do nothing unless coordinates exist
+  if (
+    !listing ||
+    !listing.geometry ||
+    !listing.geometry.coordinates ||
+    listing.geometry.coordinates.length !== 2
+  ) {
+    return;
+  }
 
   const map = new mapboxgl.Map({
     container: mapContainer.current,
     style: "mapbox://styles/mapbox/streets-v11",
-    center: listing.geometry.coordinates,
+    center: listing.geometry.coordinates, // guaranteed valid now
     zoom: 9
   });
 
@@ -43,6 +69,7 @@ export default function ListingDetails() {
 
   return () => map.remove();
 }, [listing]);
+
 
 
   // Add review
@@ -77,13 +104,13 @@ export default function ListingDetails() {
   if (!listing) return <p className="p-6">Loading...</p>;
 
   // Check ownership
-  const isOwner = user && listing.owner._id === user.id;
+  const isOwner = user && listing.owner?._id === user.id;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
 
       <img 
-        src={listing.image.url} 
+        src={listing.image?.url || "https://img.freepik.com/free-photo/beautiful_1203-2633.jpg?semt=ais_hybrid&w=740&q=80"} // BUG FIXING REQUIRED
         className="w-full h-80 object-cover rounded"
       />
 
@@ -116,11 +143,11 @@ export default function ListingDetails() {
       <div className="mt-8">
         <h2 className="text-2xl font-semibold">Reviews</h2>
 
-        {listing.reviews.length === 0 && (
+        {listing.reviews?.length === 0 && (  // BUG FIXING REQUIRED
           <p className="text-gray-500 mt-2">No reviews yet.</p>
         )}
 
-        {listing.reviews.map(r => (
+        {listing.reviews?.map(r => (   // BUG FIXING REQUIRED
           <div key={r._id} className="border p-3 mt-3 rounded">
             <p className="font-semibold">
               {r.author.username} ⭐ {r.rating}
@@ -171,13 +198,19 @@ export default function ListingDetails() {
         <p className="mt-6 text-gray-500">Login to add a review.</p>
       )}
 
-      <div className="mt-6">
+      {/* <div className="mt-6">
         <h2 className="text-xl font-semibold mb-2">Location</h2>
         <div 
             ref={mapContainer} 
             className="w-full h-64 rounded"
         />
-      </div>
+      </div> */}
+
+      {listing.geometry?.coordinates ? (
+        <div ref={mapContainer} className="w-full h-64 rounded" />
+        ) : (
+        <p className="text-gray-500 mt-4">Location not available</p>
+      )}
 
     </div>
   );
