@@ -10,19 +10,29 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = async (e)=>{
+  // const handleSubmit = async (e)=>{
+  //   e.preventDefault();
+
+  //   try {
+  //     const res = await api.post("/login", { username, password });
+
+  //     // Save user in auth context
+  //     login(res.data.user);
+
+  //     navigate("/listings");
+  //   } 
+  //   catch {
+  //     setError("Invalid credentials");
+  //   }
+  // };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const res = await api.post("/login", { username, password });
-
-      // Save user in auth context
-      login(res.data.user);
-
+      await login({ username, password });
       navigate("/listings");
-    } 
-    catch {
-      setError("Invalid credentials");
+    } catch {
+      alert("Invalid credentials");
     }
   };
 
