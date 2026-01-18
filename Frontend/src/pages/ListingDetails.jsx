@@ -92,7 +92,7 @@ useEffect(() => {
     await api.delete(`/listings/${id}/reviews/${reviewId}`);
 
     const res = await api.get(`/listings/${id}`);
-    setListing(res.data);
+    setListing(res.data.listing);
   };
 
   // Delete listing
@@ -116,6 +116,7 @@ useEffect(() => {
 
       <h1 className="text-3xl font-bold mt-4">{listing.title}</h1>
       <p className="text-gray-600">{listing.location}, {listing.country}</p>
+      <p className="italic">By {listing.owner?.username}</p>
       <p className="mt-2">{listing.description}</p>
       <p className="mt-2 font-semibold">₹ {listing.price}</p>
 
@@ -155,7 +156,7 @@ useEffect(() => {
             <p>{r.comment}</p>
 
             {/* Review owner delete */}
-            {user && r.author._id === user.id && (
+            {user && r.author._id === user._id && (
               <button
                 onClick={() => handleDeleteReview(r._id)}
                 className="text-red-500 text-sm mt-1"
@@ -205,6 +206,14 @@ useEffect(() => {
             className="w-full h-64 rounded"
         />
       </div> */}
+      
+      <br></br>
+      <br></br>
+      <div>
+        <p className="text-xl text-bold text-center italic ">You will be here</p>
+      </div>
+
+      <br></br>
 
       {listing.geometry?.coordinates ? (
         <div ref={mapContainer} className="w-full h-64 rounded" />
