@@ -23,7 +23,7 @@ export default function ListingDetails() {
   // Fetch listing
   useEffect(() => {
     api.get(`/listings/${id}`)
-      .then(res => setListing(res.data))
+      .then(res => setListing(res.data.listing))
       .catch(() => navigate("/notfound"));
   }, [id, navigate]);
 
@@ -81,7 +81,7 @@ useEffect(() => {
     });
 
     const res = await api.get(`/listings/${id}`);
-    setListing(res.data);
+    setListing(res.data.listing);
 
     setReviewText("");
     setRating(5);
@@ -104,7 +104,7 @@ useEffect(() => {
   if (!listing) return <p className="p-6">Loading...</p>;
 
   // Check ownership
-  const isOwner = user && listing.owner?._id === user.id;
+  const isOwner = user && listing.owner?._id === user._id;
 
   return (
     <div className="max-w-4xl mx-auto p-6">

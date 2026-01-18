@@ -21,7 +21,7 @@ export default function EditListing() {
   useEffect(() => {
     api.get(`/listings/${id}`)
       .then(res => {
-        const l = res.data;
+        const l = res.data.listing;
         setForm({
           title: l.title,
           description: l.description,
