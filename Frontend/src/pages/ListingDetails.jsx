@@ -12,7 +12,7 @@ mapboxgl.accessToken = import.meta.env.VITE_MAP_TOKEN;
 export default function ListingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user , loading } = useAuth();
 
   const [listing, setListing] = useState(null);
   const [reviewText, setReviewText] = useState("");
@@ -100,6 +100,10 @@ useEffect(() => {
     await api.delete(`/listings/${id}`);
     navigate("/listings");
   };
+
+  if (loading) {
+    return <p className="p-6">Loading user...</p>;
+  }
 
   if (!listing) return <p className="p-6">Loading...</p>;
 
