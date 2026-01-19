@@ -168,12 +168,12 @@ const userRouter = require("./routes/user.js");
 // DATABASE CONNECTION
 // =======================
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-// const dburl = process.env.ATLASDB_URL;   // MEN / Production
+// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const dburl = process.env.ATLASDB_URL;   // MEN / Production
 
 async function main() {
-  await mongoose.connect(MONGO_URL);
-  // await mongoose.connect(dburl);
+  // await mongoose.connect(MONGO_URL);
+  await mongoose.connect(dburl);
 }
 
 main()
@@ -204,8 +204,8 @@ app.use(cors({
 // =======================
 
 const store = MongoStore.create({
-  mongoUrl: MONGO_URL,
-  // mongoUrl: dburl,
+  // mongoUrl: MONGO_URL,
+  mongoUrl: dburl,
 });
 
 store.on("error", (err) => {
