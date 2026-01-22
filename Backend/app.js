@@ -195,7 +195,7 @@ app.set("trust proxy", 1);
 
 app.use(cors({
   origin: ["http://localhost:5173",
-    "main-project-1-rohan-saxenas-projects.vercel.app"
+    "https://main-project-1-rohan-saxenas-projects.vercel.app"
   ],
   credentials: true
 }));
