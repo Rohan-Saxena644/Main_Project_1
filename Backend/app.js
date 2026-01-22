@@ -190,6 +190,9 @@ app.use(express.urlencoded({ extended: true }));
 // app.use(methodOverride("_method"));
 
 // Enable CORS for React
+
+app.set("trust proxy", 1);
+
 app.use(cors({
   origin: ["http://localhost:5173",
     "main-project-1-rohan-saxenas-projects.vercel.app"
@@ -224,7 +227,7 @@ const sessionOptions = {
   }
 };
 
-app.set("trust proxy", 1);
+
 
 
 app.use(session(sessionOptions));
