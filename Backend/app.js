@@ -191,14 +191,36 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS for React
 
+// app.set("trust proxy", 1);
+
+// app.use(cors({
+//   origin: ["http://localhost:5173",
+//     "https://main-project-1-rohan-saxenas-projects.vercel.app"
+//   ],
+//   credentials: true
+// }));
+
 app.set("trust proxy", 1);
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://main-project-1-rohan-saxenas-projects.vercel.app"
+];
+
 app.use(cors({
-  origin: ["http://localhost:5173",
-    "https://main-project-1-rohan-saxenas-projects.vercel.app"
-  ],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS blocked: " + origin));
+    }
+  },
   credentials: true
 }));
+
 
 
 // =======================
