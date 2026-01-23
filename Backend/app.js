@@ -200,26 +200,50 @@ app.use(express.urlencoded({ extended: true }));
 //   credentials: true
 // }));
 
+// app.set("trust proxy", 1);
+
+// const allowedOrigins = [
+//   "http://localhost:5173",
+//   "https://main-project-1-rohan-saxenas-projects.vercel.app"
+// ];
+
+// app.use(cors({
+//   origin: function(origin, callback) {
+//     // Allow requests with no origin (like Postman)
+//     if (!origin) return callback(null, true);
+
+//     if (allowedOrigins.includes(origin)) {
+//       return callback(null, true);
+//     } else {
+//       return callback(new Error("CORS blocked: " + origin));
+//     }
+//   },
+//   credentials: true
+// }));
+
+
 app.set("trust proxy", 1);
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://main-project-1-rohan-saxenas-projects.vercel.app"
-];
-
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like Postman)
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://main-project-1-sandy.vercel.app"
+    ];
+
+    // allow requests with no origin (Postman, server-to-server)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      return callback(new Error("CORS blocked: " + origin));
     }
+
+    // ❌ Do NOT throw error — just deny silently
+    return callback(null, false);
   },
   credentials: true
 }));
+
 
 
 
