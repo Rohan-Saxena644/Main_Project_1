@@ -33,7 +33,7 @@ export default function Navbar() {
             <input
               type="text"
               placeholder="Search places..."
-              className="px-3 py-1 outline-none w-64 text-black"
+              className="px-3 py-1 outline-none w-64 text-white"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
