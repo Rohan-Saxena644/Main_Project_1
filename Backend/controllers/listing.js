@@ -4,7 +4,21 @@ const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 
 module.exports.index = async (req,res)=>{
-    const allListings = await Listing.find({});
+
+    const { search } = req.query;
+
+    let query = {};
+    if (search) {
+        query = {
+        $or: [
+            { title: { $regex: search, $options: "i" } },
+            { location: { $regex: search, $options: "i" } },
+            { country: { $regex: search, $options: "i" } }
+        ]
+        };
+    }
+
+    const allListings = await Listing.find(query);
     // res.render("listings/index.ejs" , {allListings}); REACTED IMPLEMENTATION THAT IS WHY COMMENTED OUT
     res.json(allListings);
 }

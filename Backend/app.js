@@ -222,28 +222,58 @@ app.use(express.urlencoded({ extended: true }));
 // }));
 
 
+// app.set("trust proxy", 1);
+
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     const allowedOrigins = [
+//       "http://localhost:5173",
+//       "https://main-project-1-sandy.vercel.app",
+//       /\.vercel\.app$/
+//     ];
+
+//     // allow requests with no origin (Postman, server-to-server)
+//     if (!origin) return callback(null, true);
+
+//     if (allowedOrigins.includes(origin)) {
+//       return callback(null, true);
+//     }
+
+//     // ❌ Do NOT throw error — just deny silently
+//     return callback(null, false);
+//   },
+//   credentials: true
+// }));
+
 app.set("trust proxy", 1);
 
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       "http://localhost:5173",
-      "https://main-project-1-sandy.vercel.app"
+      "https://main-project-1-sandy.vercel.app",
+      /\.vercel\.app$/ // Matches any preview-url.vercel.app
     ];
 
-    // allow requests with no origin (Postman, server-to-server)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    // FIX: Check for exact match OR regex match
+    const isAllowed = allowedOrigins.some((allowed) => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
 
-    // ❌ Do NOT throw error — just deny silently
-    return callback(null, false);
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      // Deny access
+      callback(null, false);
+    }
   },
   credentials: true
 }));
-
 
 
 
