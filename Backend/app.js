@@ -341,6 +341,15 @@ passport.deserializeUser(User.deserializeUser());
 // });
 
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ 
+    status: "ok", 
+    timestamp: Date.now(),
+    message: "Server is awake"
+  });
+});
+
+
 // =======================
 // API ROUTES (MERN)
 // =======================
