@@ -230,12 +230,12 @@
 // }
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../api/api";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import mapboxgl from "mapbox-gl";
-import { useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAP_TOKEN;
@@ -244,14 +244,43 @@ export default function ListingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { addToCart } = useCart();
 
   const [listing, setListing] = useState(null);
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(5);
   const [hoveredStar, setHoveredStar] = useState(0);
+  const [checkInDate, setCheckInDate] = useState("");
+  const [checkOutDate, setCheckOutDate] = useState("");
 
   const mapContainer = useRef(null);
   const mapInstance = useRef(null);
+
+  const calculateNights = () => {
+    if (!checkInDate || !checkOutDate) return 0;
+    const diffTime = new Date(checkOutDate) - new Date(checkInDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const handleAddToCart = () => {
+    if (!checkInDate || !checkOutDate) {
+      alert("Please select check-in and check-out dates");
+      return;
+    }
+    
+    const nights = calculateNights();
+    if (nights <= 0) {
+      alert("Check-out date must be after check-in date");
+      return;
+    }
+
+    addToCart(listing, checkInDate, checkOutDate, nights);
+    alert("Added to cart! 🎉");
+    // Optionally reset dates
+    // setCheckInDate("");
+    // setCheckOutDate("");
+  };
 
   // Fetch listing
   useEffect(() => {
@@ -260,7 +289,7 @@ export default function ListingDetails() {
       .catch(() => navigate("/notfound"));
   }, [id, navigate]);
 
-  // ✅ FIXED: Properly cleanup and reinitialize map when coordinates change
+  // Map initialization
   useEffect(() => {
     if (
       !listing ||
@@ -271,12 +300,10 @@ export default function ListingDetails() {
       return;
     }
 
-    // Remove existing map if it exists
     if (mapInstance.current) {
       mapInstance.current.remove();
     }
 
-    // Create new map with updated coordinates
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v12",
@@ -284,7 +311,6 @@ export default function ListingDetails() {
       zoom: 12
     });
 
-    // Add marker
     new mapboxgl.Marker({ color: "#ef4444" })
       .setLngLat(listing.geometry.coordinates)
       .setPopup(
@@ -293,7 +319,6 @@ export default function ListingDetails() {
       )
       .addTo(map);
 
-    // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl());
 
     mapInstance.current = map;
@@ -503,9 +528,91 @@ export default function ListingDetails() {
             </div>
           </div>
 
-          {/* Sidebar - Add Review */}
-          <div className="lg:col-span-1">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            
+            {/* Booking Card */}
             <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <span className="text-3xl font-bold text-gray-900">₹{listing.price}</span>
+                  <span className="text-gray-600"> / night</span>
+                </div>
+                {avgRating > 0 && (
+                  <div className="text-right">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xl font-bold">⭐ {avgRating}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">{listing.reviews?.length} reviews</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Check-in</label>
+                  <input
+                    type="date"
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Check-out</label>
+                  <input
+                    type="date"
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    min={checkInDate || new Date().toISOString().split('T')[0]}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  />
+                </div>
+
+                {calculateNights() > 0 && (
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm text-gray-700">
+                      <span>₹{listing.price} × {calculateNights()} nights</span>
+                      <span className="font-semibold">₹{(listing.price * calculateNights()).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-700 border-t pt-2">
+                      <span className="font-semibold">Total</span>
+                      <span className="font-bold text-lg">₹{(listing.price * calculateNights()).toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!user}
+                  className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                >
+                  {user ? '🛒 Add to Cart' : 'Login to Book'}
+                </button>
+
+                {!user && (
+                  <p className="text-center text-sm text-gray-600">
+                    <Link to="/login" className="text-blue-600 hover:underline font-medium">
+                      Sign in
+                    </Link> to book this listing
+                  </p>
+                )}
+
+                {user && (
+                  <Link 
+                    to="/cart"
+                    className="block w-full text-center border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  >
+                    View Cart
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Review Form Card */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
               {user ? (
                 <form onSubmit={handleReviewSubmit} className="space-y-4">
                   <h3 className="text-xl font-semibold">Leave a Review</h3>
@@ -521,7 +628,7 @@ export default function ListingDetails() {
                   <div>
                     <label className="block text-sm font-medium mb-2">Your Review</label>
                     <textarea 
-                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                       placeholder="Share your experience..."
                       rows="5"
                       value={reviewText}
@@ -532,7 +639,7 @@ export default function ListingDetails() {
 
                   <button 
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition shadow-lg"
                   >
                     Submit Review
                   </button>
@@ -542,13 +649,14 @@ export default function ListingDetails() {
                   <p className="text-gray-600 mb-4">Login to leave a review</p>
                   <Link 
                     to="/login"
-                    className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700"
+                    className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
                   >
                     Login
                   </Link>
                 </div>
               )}
             </div>
+
           </div>
 
         </div>
