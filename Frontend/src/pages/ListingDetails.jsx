@@ -277,9 +277,6 @@ export default function ListingDetails() {
 
     addToCart(listing, checkInDate, checkOutDate, nights);
     alert("Added to cart! 🎉");
-    // Optionally reset dates
-    // setCheckInDate("");
-    // setCheckOutDate("");
   };
 
   // Fetch listing
@@ -526,12 +523,59 @@ export default function ListingDetails() {
                 </div>
               )}
             </div>
+
+            {/* Add Review Form - Now in Main Content (Mobile Responsive) */}
+            <div className="bg-white rounded-xl shadow-lg p-6 lg:hidden">
+              {user ? (
+                <form onSubmit={handleReviewSubmit} className="space-y-4">
+                  <h3 className="text-xl font-semibold">Leave a Review</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Your Rating</label>
+                    <StarRating 
+                      value={rating}
+                      onChange={setRating}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Your Review</label>
+                    <textarea 
+                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                      placeholder="Share your experience..."
+                      rows="5"
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button 
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition shadow-lg"
+                  >
+                    Submit Review
+                  </button>
+                </form>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">Login to leave a review</p>
+                  <Link 
+                    to="/login"
+                    className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+                  >
+                    Login
+                  </Link>
+                </div>
+              )}
+            </div>
+
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Sidebar - Only Booking Card (Sticky) */}
+          <div className="lg:col-span-1">
             
-            {/* Booking Card */}
+            {/* Booking Card - Sticky */}
             <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -609,52 +653,56 @@ export default function ListingDetails() {
                   </Link>
                 )}
               </div>
-            </div>
 
-            {/* Review Form Card */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              {user ? (
-                <form onSubmit={handleReviewSubmit} className="space-y-4">
-                  <h3 className="text-xl font-semibold">Leave a Review</h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Your Rating</label>
-                    <StarRating 
-                      value={rating}
-                      onChange={setRating}
-                    />
+              {/* Divider */}
+              <div className="border-t my-6"></div>
+
+              {/* Review Form - Desktop Only (Non-Sticky, below booking) */}
+              <div className="hidden lg:block">
+                {user ? (
+                  <form onSubmit={handleReviewSubmit} className="space-y-4">
+                    <h3 className="text-xl font-semibold">Leave a Review</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Your Rating</label>
+                      <StarRating 
+                        value={rating}
+                        onChange={setRating}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Your Review</label>
+                      <textarea 
+                        className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        placeholder="Share your experience..."
+                        rows="5"
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <button 
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition shadow-lg"
+                    >
+                      Submit Review
+                    </button>
+                  </form>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 mb-4">Login to leave a review</p>
+                    <Link 
+                      to="/login"
+                      className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+                    >
+                      Login
+                    </Link>
                   </div>
+                )}
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Your Review</label>
-                    <textarea 
-                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                      placeholder="Share your experience..."
-                      rows="5"
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <button 
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition shadow-lg"
-                  >
-                    Submit Review
-                  </button>
-                </form>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">Login to leave a review</p>
-                  <Link 
-                    to="/login"
-                    className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-                  >
-                    Login
-                  </Link>
-                </div>
-              )}
             </div>
 
           </div>
