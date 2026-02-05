@@ -501,7 +501,7 @@ const sessionOptions = {
     httpOnly: true,
     sameSite: "none", 
     secure: true,
-    maxAge: null // 24 hours
+    maxAge:  24 * 60 * 60 * 1000 // 24 hours
   },
   rolling: true, // Resets maxAge on each request
   unset: 'destroy'
