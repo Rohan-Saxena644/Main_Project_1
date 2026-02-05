@@ -140,14 +140,281 @@
 // });
 
 
+// require('dotenv').config();
+
+// const express = require("express");
+// const app = express();
+// const mongoose = require("mongoose");
+// const path = require("path");
+// // const methodOverride = require("method-override");
+// // const ejsMate = require("ejs-mate");
+// const ExpressError = require("./utils/ExpressError.js");
+// const session = require("express-session");
+// const passport = require("passport");
+// const LocalStrategy = require("passport-local");
+// const User = require("./models/user.js");
+// const MongoStore = require("connect-mongo");
+// const cors = require("cors");
+
+// const listingRouter = require("./routes/listing.js");
+// const reviewRouter = require("./routes/review.js");
+// const userRouter = require("./routes/user.js");
+
+
+// // =======================
+// // DATABASE CONNECTION
+// // =======================
+
+// // const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+// const dburl = process.env.ATLASDB_URL;   // MEN / Production
+
+// async function main() {
+//   // await mongoose.connect(MONGO_URL);
+//   await mongoose.connect(dburl);
+// }
+
+// main()
+//   .then(() => console.log("Connected to DB"))
+//   .catch(err => console.log(err));
+
+
+// // =======================
+// // MIDDLEWARE SETUP
+// // =======================
+
+// // React will send JSON
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// // MEN only (EJS forms & PUT override)
+// // app.use(methodOverride("_method"));
+
+// // Enable CORS for React
+
+// // app.set("trust proxy", 1);
+
+// // app.use(cors({
+// //   origin: ["http://localhost:5173",
+// //     "https://main-project-1-rohan-saxenas-projects.vercel.app"
+// //   ],
+// //   credentials: true
+// // }));
+
+// // app.set("trust proxy", 1);
+
+// // const allowedOrigins = [
+// //   "http://localhost:5173",
+// //   "https://main-project-1-rohan-saxenas-projects.vercel.app"
+// // ];
+
+// // app.use(cors({
+// //   origin: function(origin, callback) {
+// //     // Allow requests with no origin (like Postman)
+// //     if (!origin) return callback(null, true);
+
+// //     if (allowedOrigins.includes(origin)) {
+// //       return callback(null, true);
+// //     } else {
+// //       return callback(new Error("CORS blocked: " + origin));
+// //     }
+// //   },
+// //   credentials: true
+// // }));
+
+
+// // app.set("trust proxy", 1);
+
+// // app.use(cors({
+// //   origin: (origin, callback) => {
+// //     const allowedOrigins = [
+// //       "http://localhost:5173",
+// //       "https://main-project-1-sandy.vercel.app",
+// //       /\.vercel\.app$/
+// //     ];
+
+// //     // allow requests with no origin (Postman, server-to-server)
+// //     if (!origin) return callback(null, true);
+
+// //     if (allowedOrigins.includes(origin)) {
+// //       return callback(null, true);
+// //     }
+
+// //     // ❌ Do NOT throw error — just deny silently
+// //     return callback(null, false);
+// //   },
+// //   credentials: true
+// // }));
+
+// app.set("trust proxy", 1);
+
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     const allowedOrigins = [
+//       "http://localhost:5173",
+//       "https://main-project-1-sandy.vercel.app",
+//       /\.vercel\.app$/ // Matches any preview-url.vercel.app
+//     ];
+
+//     if (!origin) return callback(null, true);
+
+//     // FIX: Check for exact match OR regex match
+//     const isAllowed = allowedOrigins.some((allowed) => {
+//       if (allowed instanceof RegExp) {
+//         return allowed.test(origin);
+//       }
+//       return allowed === origin;
+//     });
+
+//     if (isAllowed) {
+//       callback(null, true);
+//     } else {
+//       // Deny access
+//       callback(null, false);
+//     }
+//   },
+//   credentials: true
+// }));
+
+
+
+// // =======================
+// // SESSION STORE
+// // =======================
+
+// const store = MongoStore.create({
+//   // mongoUrl: MONGO_URL,
+//   mongoUrl: dburl,
+// });
+
+// store.on("error", (err) => {
+//   console.log("Mongo session store error", err);
+// });
+
+// // const sessionOptions = {
+// //   store,
+// //   secret: process.env.SECRET || "devsecret",
+// //   resave: false,
+// //   saveUninitialized: false,
+// //   cookie: {
+// //     httpOnly: true,
+// //     sameSite: "none", 
+// //     secure: true,
+// //     maxAge: 7 * 24 * 60 * 60 * 1000
+// //   }
+// // };
+
+
+// const sessionOptions = {
+//   store,
+//   secret: process.env.SECRET || "devsecret",
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     httpOnly: true,
+//     sameSite: "none", 
+//     secure: true,
+//     maxAge: 24 * 60 * 60 * 1000, // 24 hours (instead of 7 days)
+//     // OR for session-only (closes when browser closes):
+//     // maxAge: null  // Session cookie - expires when browser closes
+//   },
+//   // Add rolling sessions - resets maxAge on each request
+//   rolling: true,
+  
+//   // Optional: Add session timeout for inactivity
+//   // unset: 'destroy'
+// };
+
+// const { sessionTimeout } = require("./middleware/sessionTimeout.js");
+
+// app.use(session(sessionOptions));
+// app.use(sessionTimeout);
+
+
+// // =======================
+// // PASSPORT
+// // =======================
+
+// app.use(passport.initialize());
+// app.use(passport.session());
+
+// passport.use(new LocalStrategy(User.authenticate()));
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+
+
+// // =======================
+// // MEN STACK VIEW ENGINE (COMMENTED)
+// // =======================
+
+// // app.set("view engine","ejs");
+// // app.set("views", path.join(__dirname,"views"));
+// // app.engine("ejs", ejsMate);
+// // app.use(express.static(path.join(__dirname,"public")));
+
+// // Flash + res.locals were only for EJS
+// // const flash = require("connect-flash");
+// // app.use(flash());
+// // app.use((req,res,next)=>{
+// //   res.locals.success = req.flash("success") || [];
+// //   res.locals.error = req.flash("error") || [];
+// //   res.locals.currUser = req.user || null;
+// //   next();
+// // });
+
+
+// app.get("/api/health", (req, res) => {
+//   res.status(200).json({ 
+//     status: "ok", 
+//     timestamp: Date.now(),
+//     message: "Server is awake"
+//   });
+// });
+
+
+// // =======================
+// // API ROUTES (MERN)
+// // =======================
+
+// app.use("/api/listings", listingRouter);
+// app.use("/api/listings/:id/reviews", reviewRouter);
+// app.use("/api", userRouter);
+
+
+// // =======================
+// // ERROR HANDLING
+// // =======================
+
+// app.all("*",(req,res,next)=>{
+//   next(new ExpressError(404,"Route not found"));
+// });
+
+// // MERN Error Handler → JSON
+// app.use((err,req,res,next)=>{
+//   const status = err.statusCode || 500;
+//   const message = err.message || "Something went wrong";
+
+//   // MEN fallback
+//   // res.status(status).render("error.ejs",{message});
+
+//   // MERN response
+//   res.status(status).json({ error: message });
+// });
+
+
+// // =======================
+// // SERVER START
+// // =======================
+
+// app.listen(8080, ()=>{
+//   console.log("Server listening on port 8080");
+// });
+
 require('dotenv').config();
 
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const path = require("path");
-// const methodOverride = require("method-override");
-// const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 const session = require("express-session");
 const passport = require("passport");
@@ -159,17 +426,16 @@ const cors = require("cors");
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
+const { sessionTimeout } = require("./middleware.js"); 
 
 
 // =======================
 // DATABASE CONNECTION
 // =======================
 
-// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-const dburl = process.env.ATLASDB_URL;   // MEN / Production
+const dburl = process.env.ATLASDB_URL;
 
 async function main() {
-  // await mongoose.connect(MONGO_URL);
   await mongoose.connect(dburl);
 }
 
@@ -182,68 +448,8 @@ main()
 // MIDDLEWARE SETUP
 // =======================
 
-// React will send JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// MEN only (EJS forms & PUT override)
-// app.use(methodOverride("_method"));
-
-// Enable CORS for React
-
-// app.set("trust proxy", 1);
-
-// app.use(cors({
-//   origin: ["http://localhost:5173",
-//     "https://main-project-1-rohan-saxenas-projects.vercel.app"
-//   ],
-//   credentials: true
-// }));
-
-// app.set("trust proxy", 1);
-
-// const allowedOrigins = [
-//   "http://localhost:5173",
-//   "https://main-project-1-rohan-saxenas-projects.vercel.app"
-// ];
-
-// app.use(cors({
-//   origin: function(origin, callback) {
-//     // Allow requests with no origin (like Postman)
-//     if (!origin) return callback(null, true);
-
-//     if (allowedOrigins.includes(origin)) {
-//       return callback(null, true);
-//     } else {
-//       return callback(new Error("CORS blocked: " + origin));
-//     }
-//   },
-//   credentials: true
-// }));
-
-
-// app.set("trust proxy", 1);
-
-// app.use(cors({
-//   origin: (origin, callback) => {
-//     const allowedOrigins = [
-//       "http://localhost:5173",
-//       "https://main-project-1-sandy.vercel.app",
-//       /\.vercel\.app$/
-//     ];
-
-//     // allow requests with no origin (Postman, server-to-server)
-//     if (!origin) return callback(null, true);
-
-//     if (allowedOrigins.includes(origin)) {
-//       return callback(null, true);
-//     }
-
-//     // ❌ Do NOT throw error — just deny silently
-//     return callback(null, false);
-//   },
-//   credentials: true
-// }));
 
 app.set("trust proxy", 1);
 
@@ -252,12 +458,11 @@ app.use(cors({
     const allowedOrigins = [
       "http://localhost:5173",
       "https://main-project-1-sandy.vercel.app",
-      /\.vercel\.app$/ // Matches any preview-url.vercel.app
+      /\.vercel\.app$/
     ];
 
     if (!origin) return callback(null, true);
 
-    // FIX: Check for exact match OR regex match
     const isAllowed = allowedOrigins.some((allowed) => {
       if (allowed instanceof RegExp) {
         return allowed.test(origin);
@@ -268,7 +473,6 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
-      // Deny access
       callback(null, false);
     }
   },
@@ -276,13 +480,11 @@ app.use(cors({
 }));
 
 
-
 // =======================
 // SESSION STORE
 // =======================
 
 const store = MongoStore.create({
-  // mongoUrl: MONGO_URL,
   mongoUrl: dburl,
 });
 
@@ -299,14 +501,16 @@ const sessionOptions = {
     httpOnly: true,
     sameSite: "none", 
     secure: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+  rolling: true, // Resets maxAge on each request
+  unset: 'destroy'
 };
 
-
-
-
 app.use(session(sessionOptions));
+
+// IMPORTANT: sessionTimeout must come AFTER session() but BEFORE passport
+app.use(sessionTimeout);
 
 
 // =======================
@@ -322,24 +526,8 @@ passport.deserializeUser(User.deserializeUser());
 
 
 // =======================
-// MEN STACK VIEW ENGINE (COMMENTED)
+// HEALTH CHECK
 // =======================
-
-// app.set("view engine","ejs");
-// app.set("views", path.join(__dirname,"views"));
-// app.engine("ejs", ejsMate);
-// app.use(express.static(path.join(__dirname,"public")));
-
-// Flash + res.locals were only for EJS
-// const flash = require("connect-flash");
-// app.use(flash());
-// app.use((req,res,next)=>{
-//   res.locals.success = req.flash("success") || [];
-//   res.locals.error = req.flash("error") || [];
-//   res.locals.currUser = req.user || null;
-//   next();
-// });
-
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ 
@@ -367,15 +555,9 @@ app.all("*",(req,res,next)=>{
   next(new ExpressError(404,"Route not found"));
 });
 
-// MERN Error Handler → JSON
 app.use((err,req,res,next)=>{
   const status = err.statusCode || 500;
   const message = err.message || "Something went wrong";
-
-  // MEN fallback
-  // res.status(status).render("error.ejs",{message});
-
-  // MERN response
   res.status(status).json({ error: message });
 });
 
@@ -387,5 +569,3 @@ app.use((err,req,res,next)=>{
 app.listen(8080, ()=>{
   console.log("Server listening on port 8080");
 });
-
-

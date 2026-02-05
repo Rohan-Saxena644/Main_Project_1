@@ -83,5 +83,7 @@ router.get("/current-user", (req, res) => {
   res.json(req.user || null);
 });
 
+router.get("/auth/check", userController.checkAuth);
+
 
 module.exports = router;

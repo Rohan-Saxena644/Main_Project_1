@@ -48,17 +48,113 @@
 //     })
 // };
 
-const User = require("../models/user.js");
+// const User = require("../models/user.js");
 
 
-// =======================
-// SIGNUP PAGE (MEN only)
-// =======================
+// // =======================
+// // SIGNUP PAGE (MEN only)
+// // =======================
 
-// module.exports.renderSignupForm = (req,res)=>{
-//     res.render("users/signup.ejs");
+// // module.exports.renderSignupForm = (req,res)=>{
+// //     res.render("users/signup.ejs");
+// // };
+// // 👉 React handles signup page now
+
+
+// // =======================
+// // SIGNUP
+// // =======================
+// module.exports.signup = async (req,res,next)=>{
+//   try {
+//     const { username, email, password } = req.body;
+
+//     const newUser = new User({ email, username });
+//     const registeredUser = await User.register(newUser, password);
+
+//     // Auto login after signup (passport session)
+//     req.login(registeredUser, (err) => {
+//       if (err) return next(err);
+
+//       // ===== MEN Stack =====
+//       // req.flash("success","Welcome to Wanderlust");
+//       // return res.redirect("/listings");
+
+//       // ===== MERN / React =====
+//       return res.status(201).json({
+//         message: "Signup successful",
+//         user: {
+//           id: registeredUser._id,
+//           username: registeredUser.username,
+//           email: registeredUser.email
+//         }
+//       });
+//     });
+
+//   } catch (e) {
+
+//     // ===== MEN Stack =====
+//     // req.flash("error", e.message);
+//     // res.redirect("/signup");
+
+//     // ===== MERN / React =====
+//     res.status(400).json({ error: e.message });
+//   }
 // };
-// 👉 React handles signup page now
+
+
+// // =======================
+// // LOGIN PAGE (MEN only)
+// // =======================
+
+// // module.exports.renderLoginForm = (req,res)=>{
+// //     res.render("users/login.ejs");
+// // };
+// // 👉 React handles login page now
+
+
+// // =======================
+// // LOGIN
+// // =======================
+// module.exports.login = async (req,res)=>{
+  
+//   // At this point passport has authenticated user
+
+//   // ===== MEN Stack =====
+//   // req.flash("success","Welcome back to Wanderlust!");
+//   // let redirectUrl = res.locals.redirectUrl || "/listings";
+//   // res.redirect(redirectUrl);
+
+//   // ===== MERN / React =====
+//   res.json({
+//     message: "Login successful",
+//     user: {
+//       id: req.user._id,
+//       username: req.user.username,
+//       email: req.user.email
+//     }
+//   });
+// };
+
+
+// // =======================
+// // LOGOUT
+// // =======================
+// module.exports.logout = (req, res, next)=>{
+
+//   req.logout((err)=>{
+//     if (err) return next(err);
+
+//     // ===== MEN Stack =====
+//     // req.flash("success","you are logged out!");
+//     // res.redirect("/listings");
+
+//     // ===== MERN / React =====
+//     res.json({ message: "Logout successful" });
+//   });
+// };
+
+
+const User = require("../models/user.js");
 
 
 // =======================
@@ -75,11 +171,6 @@ module.exports.signup = async (req,res,next)=>{
     req.login(registeredUser, (err) => {
       if (err) return next(err);
 
-      // ===== MEN Stack =====
-      // req.flash("success","Welcome to Wanderlust");
-      // return res.redirect("/listings");
-
-      // ===== MERN / React =====
       return res.status(201).json({
         message: "Signup successful",
         user: {
@@ -91,25 +182,9 @@ module.exports.signup = async (req,res,next)=>{
     });
 
   } catch (e) {
-
-    // ===== MEN Stack =====
-    // req.flash("error", e.message);
-    // res.redirect("/signup");
-
-    // ===== MERN / React =====
     res.status(400).json({ error: e.message });
   }
 };
-
-
-// =======================
-// LOGIN PAGE (MEN only)
-// =======================
-
-// module.exports.renderLoginForm = (req,res)=>{
-//     res.render("users/login.ejs");
-// };
-// 👉 React handles login page now
 
 
 // =======================
@@ -118,20 +193,25 @@ module.exports.signup = async (req,res,next)=>{
 module.exports.login = async (req,res)=>{
   
   // At this point passport has authenticated user
-
-  // ===== MEN Stack =====
-  // req.flash("success","Welcome back to Wanderlust!");
-  // let redirectUrl = res.locals.redirectUrl || "/listings";
-  // res.redirect(redirectUrl);
-
-  // ===== MERN / React =====
-  res.json({
-    message: "Login successful",
-    user: {
-      id: req.user._id,
-      username: req.user.username,
-      email: req.user.email
+  
+  // Regenerate session to prevent session fixation
+  const user = req.user;
+  req.session.regenerate((err) => {
+    if (err) {
+      return res.status(500).json({ error: "Session error" });
     }
+
+    // Restore user after regeneration
+    req.user = user;
+    
+    res.json({
+      message: "Login successful",
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        email: req.user.email
+      }
+    });
   });
 };
 
@@ -144,11 +224,40 @@ module.exports.logout = (req, res, next)=>{
   req.logout((err)=>{
     if (err) return next(err);
 
-    // ===== MEN Stack =====
-    // req.flash("success","you are logged out!");
-    // res.redirect("/listings");
+    // Destroy session completely
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
 
-    // ===== MERN / React =====
-    res.json({ message: "Logout successful" });
+      // Clear the session cookie
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none'
+      });
+
+      res.json({ message: "Logout successful" });
+    });
   });
+};
+
+
+// =======================
+// CHECK AUTH STATUS
+// =======================
+module.exports.checkAuth = (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json({
+      authenticated: true,
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        email: req.user.email
+      }
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
 };
