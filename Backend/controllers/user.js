@@ -35,33 +35,49 @@ module.exports.signup = async (req,res,next)=>{
 // =======================
 // LOGIN - FIXED
 // =======================
-module.exports.login = async (req, res) => {
-  // Passport has already authenticated and set req.user
-  // We need to manually re-login after regeneration
+// module.exports.login = async (req, res) => {
+//   // Passport has already authenticated and set req.user
+//   // We need to manually re-login after regeneration
   
+//   const user = req.user;
+  
+//   req.session.regenerate((err) => {
+//     if (err) {
+//       return res.status(500).json({ error: "Session error" });
+//     }
+
+//     // CRITICAL: Must call req.login() again after regenerate
+//     // This re-establishes the Passport session
+//     req.login(user, (err) => {
+//       if (err) {
+//         return res.status(500).json({ error: "Login failed" });
+//       }
+
+//       res.json({
+//         message: "Login successful",
+//         user: {
+//           id: user._id,
+//           username: user.username,
+//           email: user.email
+//         }
+//       });
+//     });
+//   });
+// };
+
+
+// controllers/user.js
+module.exports.login = async (req, res) => {
+  // If passport.authenticate("local") succeeds, req.user is already populated
   const user = req.user;
   
-  req.session.regenerate((err) => {
-    if (err) {
-      return res.status(500).json({ error: "Session error" });
+  res.json({
+    message: "Login successful",
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email
     }
-
-    // CRITICAL: Must call req.login() again after regenerate
-    // This re-establishes the Passport session
-    req.login(user, (err) => {
-      if (err) {
-        return res.status(500).json({ error: "Login failed" });
-      }
-
-      res.json({
-        message: "Login successful",
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email
-        }
-      });
-    });
   });
 };
 

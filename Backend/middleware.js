@@ -116,29 +116,48 @@ module.exports.isreviewAuthor = async (req, res, next) => {
 };
 
 
+// module.exports.sessionTimeout = (req, res, next) => {
+//   if (req.session && req.user) {
+//     const now = Date.now();
+//     const lastActivity = req.session.lastActivity || now;
+//     const timeout = 30 * 60 * 1000; // 30 minutes of inactivity
+
+//     if (now - lastActivity > timeout) {
+//       // Session expired due to inactivity
+//       req.logout((err) => {
+//         if (err) return next(err);
+//         req.session.destroy(() => {
+//           return res.status(401).json({ 
+//             error: "Session expired due to inactivity",
+//             sessionExpired: true 
+//           });
+//         });
+//       });
+//     } else {
+//       // Update last activity time
+//       req.session.lastActivity = now;
+//       next();
+//     }
+//   } else {
+//     next();
+//   }
+// };
+
+
 module.exports.sessionTimeout = (req, res, next) => {
   if (req.session && req.user) {
     const now = Date.now();
     const lastActivity = req.session.lastActivity || now;
-    const timeout = 30 * 60 * 1000; // 30 minutes of inactivity
+    const timeout = 30 * 60 * 1000; 
 
     if (now - lastActivity > timeout) {
-      // Session expired due to inactivity
-      req.logout((err) => {
-        if (err) return next(err);
+      return req.logout((err) => { // Use 'return' to stop execution
         req.session.destroy(() => {
-          return res.status(401).json({ 
-            error: "Session expired due to inactivity",
-            sessionExpired: true 
-          });
+          res.status(401).json({ error: "Session expired", sessionExpired: true });
         });
       });
-    } else {
-      // Update last activity time
-      req.session.lastActivity = now;
-      next();
     }
-  } else {
-    next();
+    req.session.lastActivity = now;
   }
+  next();
 };
