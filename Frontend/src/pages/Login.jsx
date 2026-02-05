@@ -26,13 +26,31 @@ export default function Login() {
   //   }
   // };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     await login({ username, password });
+  //     navigate("/listings");
+  //   } catch {
+  //     alert("Invalid credentials");
+  //   }
+  // };
+
+  // Login.jsx
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(""); // Clear previous errors
+
     try {
       await login({ username, password });
+      // This only runs if login succeeds
       navigate("/listings");
-    } catch {
-      alert("Invalid credentials");
+    } catch (err) {
+      // This runs if the server returns 401 or any error
+      alert("Login failed: Invalid username or password.");
+      setPassword(""); // Clear password for security/retry
+      setError("Invalid credentials. Please try again.");
+      // We do NOT navigate, so the user stays on the login page
     }
   };
 

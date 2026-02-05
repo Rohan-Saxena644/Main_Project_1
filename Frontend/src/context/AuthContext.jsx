@@ -54,16 +54,29 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Login with error handling
+  // // Login with error handling
+  // const login = async (credentials) => {
+  //   try {
+  //     await api.post("/login", credentials);
+  //     const res = await api.get("/current-user");
+  //     setUser(res.data);
+  //     return { success: true };
+  //   } catch (error) {
+  //     const errorMessage = error.response?.data?.error || "Login failed";
+  //     return { success: false, error: errorMessage };
+  //   }
+  // };
+
+  // Inside AuthContext.js
   const login = async (credentials) => {
     try {
       await api.post("/login", credentials);
       const res = await api.get("/current-user");
       setUser(res.data);
-      return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.error || "Login failed";
-      return { success: false, error: errorMessage };
+      // CRITICAL: You must throw so the component knows it failed
+      throw new Error(errorMessage); 
     }
   };
 

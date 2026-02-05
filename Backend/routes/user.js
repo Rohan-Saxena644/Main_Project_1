@@ -62,11 +62,30 @@ router.post("/signup", wrapAsync(userController.signup));
 //   );
 
 // ===== MERN / React =====
-router.post(
-  "/login",
-  passport.authenticate("local"),  // passport sets req.user
-  userController.login             // controller returns JSON
-);
+// router.post(
+//   "/login",
+//   passport.authenticate("local"),  // passport sets req.user
+//   userController.login             // controller returns JSON
+// );
+
+
+// routes/user.js
+router.post("/login", (req, res, next) => {
+  passport.authenticate("local", (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+    if (!user) {
+      // info.message usually contains "Password or username is incorrect"
+      return res.status(401).json({ error: info.message || "Invalid credentials" });
+    }
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      // Call your controller logic if successful
+      return userController.login(req, res);
+    });
+  })(req, res, next);
+});
 
 
 // =======================
