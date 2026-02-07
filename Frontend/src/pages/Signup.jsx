@@ -276,7 +276,6 @@
 // }
 
 
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/api";
@@ -303,6 +302,8 @@ export default function Signup() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -310,15 +311,90 @@ export default function Signup() {
     setError("");
     setLoading(true);
 
+    // Client-side validation
+    if (!form.username.trim() || !form.email.trim() || !form.password.trim()) {
+      setError("All fields are required");
+      setLoading(false);
+      return;
+    }
+
+    if (form.username.trim().length < 3) {
+      setError("Username must be at least 3 characters long");
+      setLoading(false);
+      return;
+    }
+
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await api.post("/signup", form);
-      const loginResult = await login({ username: form.username, password: form.password });
+      console.log("Attempting signup for:", form.username); // Debug log
+
+      // Attempt signup
+      const signupResponse = await api.post("/signup", {
+        username: form.username.trim(),
+        email: form.email.trim(),
+        password: form.password
+      });
+
+      console.log("Signup successful:", signupResponse.data); // Debug log
+
+      // Auto-login after successful signup
+      console.log("Attempting auto-login..."); // Debug log
+      
+      const loginResult = await login({ 
+        username: form.username.trim(), 
+        password: form.password 
+      });
       
       if (loginResult.success) {
+        console.log("Auto-login successful, redirecting..."); // Debug log
         navigate("/listings");
+      } else {
+        // Signup succeeded but login failed - rare case
+        setError("Account created! Please login manually.");
+        setTimeout(() => navigate("/login"), 2000);
       }
+
     } catch (err) {
-      setError(err.response?.data?.error || "Signup failed. Please try again.");
+      console.error("Signup error:", err); // Debug log
+      
+      // Handle different error scenarios
+      if (err.response) {
+        // Server responded with an error
+        const status = err.response.status;
+        const serverError = err.response.data?.error || err.response.data?.message;
+
+        if (status === 409 || serverError?.toLowerCase().includes('already exists') || 
+            serverError?.toLowerCase().includes('duplicate') ||
+            serverError?.toLowerCase().includes('username is taken')) {
+          setError("Username already exists. Please choose a different username.");
+        } else if (status === 400) {
+          setError(serverError || "Invalid input. Please check your details.");
+        } else if (status === 500) {
+          setError("Server error. Please try again later.");
+        } else {
+          setError(serverError || "Signup failed. Please try again.");
+        }
+      } else if (err.request) {
+        // Request made but no response received
+        setError("Cannot connect to server. Please check your internet connection.");
+      } else {
+        // Something else happened
+        setError("An unexpected error occurred. Please try again.");
+      }
+
       setLoading(false);
     }
   };
@@ -386,8 +462,11 @@ export default function Signup() {
                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                     placeholder="Choose a username"
                     required
+                    disabled={loading}
+                    minLength={3}
                   />
                 </div>
+                <p className="text-xs text-gray-400 mt-1">At least 3 characters</p>
               </div>
 
               {/* Email Field */}
@@ -409,6 +488,7 @@ export default function Signup() {
                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                     placeholder="Enter your email"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -432,8 +512,11 @@ export default function Signup() {
                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                     placeholder="Create a password"
                     required
+                    disabled={loading}
+                    minLength={6}
                   />
                 </div>
+                <p className="text-xs text-gray-400 mt-1">At least 6 characters</p>
               </div>
 
               {/* Submit Button */}

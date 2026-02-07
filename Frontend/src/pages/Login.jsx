@@ -271,7 +271,6 @@
 //   );
 // }
 
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -296,15 +295,48 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    const result = await login({ username, password });
-    
-    setLoading(false);
+    // Input validation
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password");
+      setLoading(false);
+      return;
+    }
 
-    if (result.success) {
-      navigate("/listings");
-    } else {
-      setError(result.error || "Invalid credentials. Please try again.");
+    try {
+      console.log("Attempting login for:", username); // Debug log
+      
+      const result = await login({ username: username.trim(), password });
+      
+      console.log("Login result:", result); // Debug log
+      
+      if (result.success) {
+        navigate("/listings");
+      } else {
+        // Handle different error scenarios
+        const errorMessage = result.error || "Invalid credentials. Please try again.";
+        setError(errorMessage);
+        setPassword(""); // Clear password on error
+      }
+    } catch (err) {
+      // Catch any unexpected errors
+      console.error("Login error:", err);
+      
+      // Provide user-friendly error messages
+      if (err.response) {
+        // Server responded with error
+        const serverError = err.response.data?.error || err.response.data?.message;
+        setError(serverError || `Server error: ${err.response.status}`);
+      } else if (err.request) {
+        // Request made but no response
+        setError("Cannot connect to server. Please check your internet connection.");
+      } else {
+        // Something else happened
+        setError("An unexpected error occurred. Please try again.");
+      }
+      
       setPassword("");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -370,6 +402,7 @@ export default function Login() {
                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     placeholder="Enter your username"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -392,6 +425,7 @@ export default function Login() {
                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     placeholder="Enter your password"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>

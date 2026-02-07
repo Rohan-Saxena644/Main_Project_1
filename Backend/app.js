@@ -99,7 +99,6 @@ const sessionOptions = {
 
 app.use(session(sessionOptions));
 
-app.use(sessionTimeout);
 
 
 // =======================
@@ -113,6 +112,8 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+
+app.use(sessionTimeout);
 
 // =======================
 // HEALTH CHECK

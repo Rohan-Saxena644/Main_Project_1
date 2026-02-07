@@ -27,82 +27,158 @@
 
 
 
+
+
+
+
+
+// const express = require("express");
+// const router = express.Router();
+// const wrapAsync = require("../utils/wrapAsync");
+// const passport = require("passport");
+// const { saveRedirectUrl } = require("../middleware.js");
+// const userController = require("../controllers/user.js");
+
+
+// // =======================
+// // SIGNUP
+// // =======================
+
+// // ===== MEN Stack =====
+// // router.route("/signup")
+// //   .get(userController.renderSignupForm)
+// //   .post(wrapAsync(userController.signup));
+
+// // ===== MERN / React =====
+// router.post("/signup", wrapAsync(userController.signup));
+
+
+// // =======================
+// // LOGIN
+// // =======================
+
+// // ===== MEN Stack =====
+// // router.route("/login")
+// //   .get(userController.renderLoginForm)
+// //   .post(
+// //      saveRedirectUrl,
+// //      passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }),
+// //      userController.login
+// //   );
+
+// // ===== MERN / React =====
+// // router.post(
+// //   "/login",
+// //   passport.authenticate("local"),  // passport sets req.user
+// //   userController.login             // controller returns JSON
+// // );
+
+
+// // routes/user.js
+// router.post("/login", (req, res, next) => {
+//   passport.authenticate("local", (err, user, info) => {
+//     if (err) {
+//       return res.status(500).json({ error: "Internal Server Error" });
+//     }
+//     if (!user) {
+//       // info.message usually contains "Password or username is incorrect"
+//       return res.status(401).json({ error: info.message || "Invalid credentials" });
+//     }
+//     req.logIn(user, (err) => {
+//       if (err) return next(err);
+//       // Call your controller logic if successful
+//       return userController.login(req, res);
+//     });
+//   })(req, res, next);
+// });
+
+
+// // =======================
+// // LOGOUT
+// // =======================
+
+// // ===== MEN Stack =====
+// // router.get("/logout", userController.logout);
+
+// // ===== MERN / React =====
+// router.post("/logout", userController.logout);
+
+// router.get("/current-user", (req, res) => {
+//   res.json(req.user || null);
+// });
+
+// router.get("/auth/check", userController.checkAuth);
+
+
+// module.exports = router;
+
+
+
+
 const express = require("express");
 const router = express.Router();
 const wrapAsync = require("../utils/wrapAsync");
 const passport = require("passport");
-const { saveRedirectUrl } = require("../middleware.js");
+const { saveRedirectUrl, isLoggedIn } = require("../middleware.js");
 const userController = require("../controllers/user.js");
-
 
 // =======================
 // SIGNUP
 // =======================
-
-// ===== MEN Stack =====
-// router.route("/signup")
-//   .get(userController.renderSignupForm)
-//   .post(wrapAsync(userController.signup));
-
-// ===== MERN / React =====
 router.post("/signup", wrapAsync(userController.signup));
 
-
 // =======================
-// LOGIN
+// LOGIN - WITH PROPER ERROR HANDLING
 // =======================
+router.post(
+  "/login",
+  (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return res.status(500).json({ error: "Authentication error" });
+      }
+      
+      if (!user) {
+        return res.status(401).json({ 
+          error: info?.message || "Invalid username or password" 
+        });
+      }
 
-// ===== MEN Stack =====
-// router.route("/login")
-//   .get(userController.renderLoginForm)
-//   .post(
-//      saveRedirectUrl,
-//      passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }),
-//      userController.login
-//   );
-
-// ===== MERN / React =====
-// router.post(
-//   "/login",
-//   passport.authenticate("local"),  // passport sets req.user
-//   userController.login             // controller returns JSON
-// );
-
-
-// routes/user.js
-router.post("/login", (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) {
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-    if (!user) {
-      // info.message usually contains "Password or username is incorrect"
-      return res.status(401).json({ error: info.message || "Invalid credentials" });
-    }
-    req.logIn(user, (err) => {
-      if (err) return next(err);
-      // Call your controller logic if successful
-      return userController.login(req, res);
-    });
-  })(req, res, next);
-});
-
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed" });
+        }
+        
+        // Call the controller
+        return userController.login(req, res);
+      });
+    })(req, res, next);
+  }
+);
 
 // =======================
 // LOGOUT
 // =======================
-
-// ===== MEN Stack =====
-// router.get("/logout", userController.logout);
-
-// ===== MERN / React =====
 router.post("/logout", userController.logout);
 
+// =======================
+// CURRENT USER
+// =======================
 router.get("/current-user", (req, res) => {
-  res.json(req.user || null);
+  if (req.isAuthenticated()) {
+    res.json({
+      id: req.user._id,
+      username: req.user.username,
+      email: req.user.email
+    });
+  } else {
+    res.json(null);
+  }
 });
 
+// =======================
+// AUTH CHECK
+// =======================
 router.get("/auth/check", userController.checkAuth);
-
 
 module.exports = router;
