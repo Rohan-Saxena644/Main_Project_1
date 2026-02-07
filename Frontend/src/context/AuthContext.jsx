@@ -68,17 +68,33 @@ export function AuthProvider({ children }) {
   // };
 
   // Inside AuthContext.js
+  // const login = async (credentials) => {
+  //   try {
+  //     await api.post("/login", credentials);
+  //     const res = await api.get("/current-user");
+  //     setUser(res.data);
+  //   } catch (error) {
+  //     const errorMessage = error.response?.data?.error || "Login failed";
+  //     // CRITICAL: You must throw so the component knows it failed
+  //     throw new Error(errorMessage); 
+  //   }
+  // };
+
+
   const login = async (credentials) => {
     try {
-      await api.post("/login", credentials);
-      const res = await api.get("/current-user");
-      setUser(res.data);
+      const response = await api.post("/login", credentials);
+      // Use the data returned from the login call directly to save a network request
+      const userData = response.data.user; 
+      setUser(userData);
+      return { success: true }; // MUST return this for your Login.js logic
     } catch (error) {
       const errorMessage = error.response?.data?.error || "Login failed";
-      // CRITICAL: You must throw so the component knows it failed
-      throw new Error(errorMessage); 
+      return { success: false, error: errorMessage };
     }
   };
+
+
 
   // Logout with error handling
   const logout = async () => {

@@ -82,19 +82,33 @@ store.on("error", (err) => {
   console.log("Mongo session store error", err);
 });
 
+// const sessionOptions = {
+//   store,
+//   secret: process.env.SECRET || "devsecret",
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     httpOnly: true,
+//     sameSite: "none", 
+//     secure: true,
+//     maxAge:  24 * 60 * 60 * 1000 // 24 hours
+//   },
+//   rolling: true, // Resets maxAge on each request
+//   unset: 'destroy'
+// };
+
 const sessionOptions = {
   store,
   secret: process.env.SECRET || "devsecret",
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Tell express-session to trust the Vercel/Reverse Proxy
   cookie: {
     httpOnly: true,
-    sameSite: "none", 
-    secure: true,
-    maxAge:  24 * 60 * 60 * 1000 // 24 hours
+    sameSite: "none", // Required for cross-domain (Frontend on Vercel -> Backend elsewhere)
+    secure: true,     // Required for sameSite: "none"
+    maxAge: 24 * 60 * 60 * 1000 
   },
-  rolling: true, // Resets maxAge on each request
-  unset: 'destroy'
 };
 
 app.use(session(sessionOptions));
