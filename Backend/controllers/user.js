@@ -19,7 +19,7 @@ module.exports.signup = async (req,res,next)=>{
       return res.status(201).json({
         message: "Signup successful",
         user: {
-          id: registeredUser._id,
+          _id: registeredUser._id,
           username: registeredUser.username,
           email: registeredUser.email
         }
@@ -74,7 +74,7 @@ module.exports.login = async (req, res) => {
   res.json({
     message: "Login successful",
     user: {
-      id: user._id,
+      _id: user._id,
       username: user.username,
       email: user.email
     }
@@ -118,7 +118,7 @@ module.exports.checkAuth = (req, res) => {
     res.json({
       authenticated: true,
       user: {
-        id: req.user._id,
+        _id: req.user._id,
         username: req.user.username,
         email: req.user.email
       }

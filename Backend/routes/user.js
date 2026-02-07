@@ -26,10 +26,7 @@
 // module.exports = router;
 
 
-
-
-
-
+//-------------------------------------------------------------------------------
 
 
 // const express = require("express");
@@ -109,9 +106,9 @@
 
 // router.get("/auth/check", userController.checkAuth);
 
-
 // module.exports = router;
 
+//------------------------------------------------------------------------------------------------
 
 
 
@@ -149,7 +146,6 @@ router.post(
           return res.status(500).json({ error: "Login failed" });
         }
         
-        // Call the controller
         return userController.login(req, res);
       });
     })(req, res, next);
@@ -162,12 +158,12 @@ router.post(
 router.post("/logout", userController.logout);
 
 // =======================
-// CURRENT USER
+// CURRENT USER - FIXED
 // =======================
 router.get("/current-user", (req, res) => {
   if (req.isAuthenticated()) {
     res.json({
-      id: req.user._id,
+      _id: req.user._id,  // ✅ Changed from "id" to "_id"
       username: req.user.username,
       email: req.user.email
     });
