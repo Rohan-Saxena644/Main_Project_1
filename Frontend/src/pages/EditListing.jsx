@@ -17,6 +17,9 @@ export default function EditListing() {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
   // Load existing listing
   useEffect(() => {
     api.get(`/listings/${id}`)
@@ -35,29 +38,35 @@ export default function EditListing() {
   }, [id, navigate]);
 
   const handleChange = (e) => {
-    setForm({...form, [e.target.name]: e.target.value});
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSubmitting(true);
 
-    const formData = new FormData();
-    formData.append("listing[title]", form.title);
-    formData.append("listing[description]", form.description);
-    formData.append("listing[location]", form.location);
-    formData.append("listing[country]", form.country);
-    formData.append("listing[price]", form.price);
+    try {
+      const formData = new FormData();
+      formData.append("listing[title]", form.title);
+      formData.append("listing[description]", form.description);
+      formData.append("listing[location]", form.location);
+      formData.append("listing[country]", form.country);
+      formData.append("listing[price]", form.price);
+      if (image) {
+        formData.append("listing[image]", image);
+      }
 
-    // Only update image if new one selected
-    if(image){
-      formData.append("listing[image]", image);
+      await api.put(`/listings/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      navigate(`/listings/${id}`);
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to update listing. Please try again.");
+      setSubmitting(false);
     }
-
-    await api.put(`/listings/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
-    });
-
-    navigate(`/listings/${id}`);
   };
 
   if(loading) return <p className="p-6">Loading...</p>;
@@ -90,9 +99,14 @@ export default function EditListing() {
 
         <input type="file" onChange={(e)=>setImage(e.target.files[0])}/>
 
-        <button className="bg-black text-white px-4 py-2 w-full">
-          Update Listing
+        <button 
+          disabled={submitting}
+          className="bg-black text-white px-4 py-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Updating..." : "Update Listing"}
         </button>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
       </form>
     </div>
