@@ -1,13 +1,17 @@
 
 
-import { createContext, useContext, useEffect, useState } from "react";
+// AuthContext.jsx — update the import at the top
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import api from "../api/api";
+import { useNavigate } from "react-router-dom"; // ← Add this
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   // Initial auth check on mount
   useEffect(() => {
@@ -21,11 +25,9 @@ export function AuthProvider({ children }) {
         const response = await api.get('/auth/check');
         
         if (!response.data.authenticated && user) {
-          // Session expired while user was logged in
           setUser(null);
-          alert('Your session has expired. Please login again.');
+          navigate('/login?reason=expired'); // ← Replace the alert with this
         } else if (response.data.authenticated && !user) {
-          // Session exists but context is out of sync
           setUser(response.data.user);
         }
       } catch (error) {
@@ -36,11 +38,9 @@ export function AuthProvider({ children }) {
       }
     };
 
-    // Check every 5 minutes
     const interval = setInterval(checkSession, 5 * 60 * 1000);
-    
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, navigate]);
 
   // Check auth status
   const checkAuthStatus = async () => {

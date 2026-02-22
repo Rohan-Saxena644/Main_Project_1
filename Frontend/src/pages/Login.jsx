@@ -274,6 +274,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -282,6 +283,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login, user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const sessionExpired = searchParams.get("reason") === "expired";
 
   // Redirect if already logged in
   useEffect(() => {
@@ -373,6 +376,12 @@ export default function Login() {
               <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
               <p className="text-gray-300">Sign in to continue your journey</p>
             </div>
+
+            {sessionExpired && (
+              <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-200 px-4 py-3 rounded-lg mb-6">
+                <p className="text-sm">Your session has expired. Please sign in again.</p>
+              </div>
+            )}
 
             {/* Error Alert */}
             {error && (
