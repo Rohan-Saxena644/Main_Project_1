@@ -15,24 +15,25 @@ export default function NewListing() {
 
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false); // ← Add this
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSubmitting(true); // ← Lock the button
 
     try {
       const formData = new FormData();
-
-      // Must match your backend schema
       formData.append("listing[title]", form.title);
       formData.append("listing[description]", form.description);
       formData.append("listing[location]", form.location);
       formData.append("listing[country]", form.country);
       formData.append("listing[price]", form.price);
-
       formData.append("listing[image]", image);
 
       await api.post("/listings", formData, {
@@ -40,8 +41,9 @@ export default function NewListing() {
       });
 
       navigate("/listings");
-    } catch {
-      setError("Failed to create listing");
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to create listing. Please try again.");
+      setSubmitting(false); // ← Only unlock on failure
     }
   };
 
@@ -71,14 +73,17 @@ export default function NewListing() {
           onChange={handleChange} required />
 
         <input type="file"
-          onChange={(e)=>setImage(e.target.files[0])}
+          onChange={(e) => setImage(e.target.files[0])}
           required />
 
-        <button className="bg-black text-white px-4 py-2 w-full">
-          Create Listing
+        <button
+          disabled={submitting}
+          className="bg-black text-white px-4 py-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Creating..." : "Create Listing"}
         </button>
 
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
       </form>
     </div>
   );
