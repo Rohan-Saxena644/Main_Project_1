@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo} from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
@@ -17,6 +17,18 @@ export default function Home() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  const particles = useMemo(() => 
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      width: Math.random() * 4 + 2,
+      top: Math.random() * 100,
+      left: Math.random() * 100,
+      duration: Math.random() * 10 + 10,
+      delay: Math.random() * 5
+    })), 
+  [] // ← empty array means calculate once on mount, never again
+  );
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-purple-900 via-blue-900 to-black">
       
@@ -29,7 +41,7 @@ export default function Home() {
         }}
       />
 
-      {/* Floating Particles */}
+      {/* Floating Particles
       <div className="absolute inset-0">
         {[...Array(20)].map((_, i) => (
           <div
@@ -45,7 +57,22 @@ export default function Home() {
             }}
           />
         ))}
-      </div>
+      </div> */}
+
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full bg-white opacity-20"
+          style={{
+            width: p.width + 'px',
+            height: p.width + 'px',
+            top: p.top + '%',
+            left: p.left + '%',
+            animation: `float ${p.duration}s infinite ease-in-out`,
+            animationDelay: `${p.delay}s`
+          }}
+        />
+      ))}
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-white px-4">
