@@ -12,7 +12,9 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import EditListing from "./pages/EditListing";
-import Cart from "./pages/Cart"; // Add this
+import Cart from "./pages/Cart";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -68,12 +70,12 @@ export default function App() {
           animation: 'pulse 2s ease-in-out infinite',
           marginBottom: '20px'
         }}>
-          <svg 
-            width="60" 
-            height="60" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            width="60"
+            height="60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
             strokeWidth="2"
           >
             <circle cx="12" cy="12" r="10" />
@@ -102,35 +104,48 @@ export default function App() {
   return (
     <CartProvider> {/* Wrap everything in CartProvider */}
       <BrowserRouter>
-        
-        <Navbar/>
+
+        <Navbar />
 
         <Routes>
-          <Route path="/" element={<Home/>}/>
-          <Route path="/listings" element={<Listings/>}/>
-          <Route path="/listings/:id" element={<ListingDetails/>}/>
-          <Route path="/cart" element={<Cart/>}/> {/* Add cart route */}
+          <Route path="/" element={<Home />} />
+          <Route path="/listings" element={<Listings />} />
+          <Route path="/listings/:id" element={<ListingDetails />} />
+          <Route path="/cart" element={<Cart />} /> {/* Add cart route */}
 
-          <Route 
-            path="/listings/new" 
+          <Route
+            path="/listings/new"
             element={
               <ProtectedRoute>
-                <NewListing/>
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route 
-            path="/listings/:id/edit" 
-            element={
-              <ProtectedRoute>
-                <EditListing/>
+                <NewListing />
               </ProtectedRoute>
             }
           />
 
-          <Route path="/login" element={<Login/>}/>
-          <Route path="/signup" element={<Signup/>}/>
+          <Route
+            path="/listings/:id/edit"
+            element={
+              <ProtectedRoute>
+                <EditListing />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
+          {/* Profile routes */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/profile/:username" element={<Profile />} />
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
 
       </BrowserRouter>

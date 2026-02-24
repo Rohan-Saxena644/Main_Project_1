@@ -30,10 +30,10 @@
 //   return (
 //     <nav className="bg-black text-white">
 //       <div className="px-4 sm:px-6 py-4">
-        
+
 //         {/* Desktop & Mobile Top Bar */}
 //         <div className="flex justify-between items-center">
-          
+
 //           {/* Logo */}
 //           <Link to="/" className="text-xl font-bold" onClick={handleLinkClick}>
 //             Wanderlust
@@ -87,7 +87,7 @@
 //                 </span>
 //               )}
 //             </Link>
-            
+
 //             {user ? (
 //               <>
 //                 <Link to="/listings/new" className="hover:underline whitespace-nowrap">
@@ -119,7 +119,7 @@
 
 //           {/* Right Side - Mobile (Cart + Hamburger) */}
 //           <div className="lg:hidden flex items-center gap-4">
-            
+
 //             {/* Cart Icon - Mobile */}
 //             <Link 
 //               to="/cart" 
@@ -179,7 +179,7 @@
 //         {/* Mobile Menu Dropdown */}
 //         <div className={`lg:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-96 mt-4' : 'max-h-0'}`}>
 //           <div className="flex flex-col gap-3 py-2">
-            
+
 //             <Link 
 //               to="/listings" 
 //               className="hover:bg-gray-800 px-3 py-2 rounded"
@@ -187,7 +187,7 @@
 //             >
 //               Listings
 //             </Link>
-            
+
 //             {user ? (
 //               <>
 //                 <Link 
@@ -270,14 +270,14 @@ export default function Navbar() {
     <nav className="bg-black text-white sticky top-0 z-50 shadow-md">
       {/* Max-w-7xl and mx-auto pulls the content slightly away from the extreme edges */}
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4">
-        
+
         {/* Desktop & Mobile Top Bar */}
         <div className="flex justify-between items-center">
-          
+
           {/* Logo */}
-          <Link 
-            to="/" 
-            className="text-2xl font-extrabold tracking-tight hover:text-red-500 transition-colors" 
+          <Link
+            to="/"
+            className="text-2xl font-extrabold tracking-tight hover:text-red-500 transition-colors"
             onClick={handleLinkClick}
           >
             Wanderlust
@@ -301,25 +301,25 @@ export default function Navbar() {
 
           {/* Desktop Links - Polished Buttons */}
           <div className="hidden lg:flex items-center gap-2">
-            <Link 
-              to="/listings" 
+            <Link
+              to="/listings"
               className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-all whitespace-nowrap"
             >
               Listings
             </Link>
 
             {/* Cart Icon */}
-            <Link 
-              to="/cart" 
+            <Link
+              to="/cart"
               className="relative p-2 rounded-full hover:bg-white/10 transition-all mr-2"
               onClick={handleLinkClick}
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                strokeWidth={1.5} 
-                stroke="currentColor" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
                 className="w-6 h-6"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
@@ -330,19 +330,25 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-            
+
             {user ? (
               <div className="flex items-center gap-3">
-                <Link 
-                  to="/listings/new" 
+                <Link
+                  to="/listings/new"
                   className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-all whitespace-nowrap border border-gray-700 hover:border-gray-500"
                 >
                   Add Listing
                 </Link>
 
-                <span className="text-gray-400 text-sm hidden xl:block">
-                  Hi, <span className="text-white font-semibold">{user.username}</span>
-                </span>
+                <Link
+                  to="/profile"
+                  className="text-gray-400 text-sm hidden xl:flex items-center gap-1.5 hover:text-white transition-colors"
+                >
+                  <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold text-white">
+                    {user.username.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="font-semibold text-white">{user.username}</span>
+                </Link>
 
                 <button
                   onClick={logout}
@@ -353,14 +359,14 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-all"
                 >
                   Login
                 </Link>
-                <Link 
-                  to="/signup" 
+                <Link
+                  to="/signup"
                   className="bg-red-500 px-4 py-2 rounded-md text-sm font-bold hover:bg-red-600 transition-colors whitespace-nowrap shadow-lg shadow-red-500/20"
                 >
                   Sign Up
@@ -372,7 +378,7 @@ export default function Navbar() {
           {/* Mobile UI Buttons */}
           <div className="lg:hidden flex items-center gap-4">
             <Link to="/cart" className="relative p-1" onClick={handleLinkClick}>
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
               </svg>
               {cartItemCount > 0 && (
@@ -416,10 +422,16 @@ export default function Navbar() {
         <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
           <div className="flex flex-col gap-2 py-4 border-t border-gray-800">
             <Link to="/listings" className="hover:bg-white/10 px-4 py-3 rounded-lg transition-colors" onClick={handleLinkClick}>Listings</Link>
-            
+
             {user ? (
               <>
                 <Link to="/listings/new" className="hover:bg-white/10 px-4 py-3 rounded-lg transition-colors" onClick={handleLinkClick}>Add Listing</Link>
+                <Link to="/profile" className="hover:bg-white/10 px-4 py-3 rounded-lg transition-colors flex items-center gap-2" onClick={handleLinkClick}>
+                  <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">
+                    {user.username.slice(0, 2).toUpperCase()}
+                  </span>
+                  My Profile
+                </Link>
                 <div className="px-4 py-2 text-gray-400 text-sm italic">Hi, {user.username}</div>
                 <button
                   onClick={() => { logout(); handleLinkClick(); }}
