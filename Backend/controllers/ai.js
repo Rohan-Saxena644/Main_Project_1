@@ -2,42 +2,39 @@
  * controllers/ai.js
  *
  * AI-powered natural language listing search.
- * Uses Google Gemini (aistudio.google.com) to parse the user's preference
- * into structured MongoDB filters, then returns matching listings.
+ * Uses Google Gemini 3 (gemini-3-flash-preview) via the @google/genai SDK.
  */
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 const Listing = require("../models/listing.js");
 
-
-// Note: genAI should be initialized inside or used with a getter to ensure
-// it picks up the latest env vars if they change without a full restart.
-const getGenAI = () => {
+// Client initialization
+const getAIClient = () => {
     if (!process.env.GEMINI_API_KEY) return null;
-    return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 };
 
 // ── System prompt ──
 const SYSTEM_PROMPT = `
-You are a travel listing search assistant for "Wanderlust", a platform where users find places to stay.
-Your job is to read the user's natural language preference and extract structured search filters.
+You are a travel listing search assistant for "Wanderlust".
+Extract structured search filters from the user's natural language request.
 
-Available categories are EXACTLY: mountains, arctic, farms, deserts, beaches, cities, forests, lakes.
+Available categories: mountains, arctic, farms, deserts, beaches, cities, forests, lakes.
 
-You MUST respond with ONLY a valid JSON object in this exact shape — no markdown blocks, no extra text:
+Respond with ONLY a JSON object:
 {
-  "category": "<one of the 8 categories above, or null if not specified>",
-  "maxPrice": <number in INR per night, or null>,
-  "minPrice": <number in INR per night, or null>,
-  "locationKeyword": "<a city/country/region keyword to search for, or null>",
-  "reason": "<one short sentence explaining what you understood from the user>"
+  "category": "<category or null>",
+  "maxPrice": <number or null>,
+  "minPrice": <number or null>,
+  "locationKeyword": "<city/country or null>",
+  "reason": "<explain your understanding>"
 }
 
 Rules:
-- If the user says "cheap" or "budget", set maxPrice to 3000
-- If the user says "luxury" or "expensive", set minPrice to 15000
-- If the user says "moderate" or "mid-range", maxPrice 10000
-- Map synonyms: "snow/cold/polar" -> arctic, "sea/ocean/coast" -> beaches, "hill/peak/valley" -> mountains, "jungle/woods/rainforest" -> forests, "sand dunes/arid" -> deserts, "village/rural/countryside" -> farms, "urban/metro/downtown" -> cities, "river/reservoir" -> lakes
+- "cheap/budget" -> maxPrice 3000
+- "luxury/expensive" -> minPrice 15000
+- "moderate" -> maxPrice 10000
+- Map synonyms (e.g., "snow" -> arctic, "ocean" -> beaches).
 `.trim();
 
 module.exports.aiSearch = async (req, res) => {
@@ -47,30 +44,30 @@ module.exports.aiSearch = async (req, res) => {
         return res.status(400).json({ error: "Please provide a search query." });
     }
 
-    const genAI = getGenAI();
-    if (!genAI) {
+    const ai = getAIClient();
+    if (!ai) {
         return res.status(500).json({ error: "AI search is not configured. GEMINI_API_KEY is missing." });
     }
 
     try {
-        // ── Step 1: Ask Gemini to parse the query ──────────────────
-        // gemini-1.5-flash is the most stable and free model currently available.
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            generationConfig: { responseMimeType: "application/json" } // Force JSON
+        // ── Step 1: Generate structured filters using Gemini 3 ──
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [{
+                role: "user",
+                parts: [{ text: `${SYSTEM_PROMPT}\n\nUser query: "${query.trim()}"` }]
+            }],
+            config: {
+                responseMimeType: "application/json"
+            }
         });
 
-        const prompt = `${SYSTEM_PROMPT}\n\nUser query: "${query.trim()}"`;
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const filters = JSON.parse(response.candidates[0].content.parts[0].text);
 
-        // Parse result
-        const filters = JSON.parse(responseText);
-
-        // ── Step 2: Build MongoDB query from filters ──────────────
+        // ── Step 2: Build MongoDB query ──
         const mongoQuery = {};
 
-        if (filters.category && filters.category !== "null") {
+        if (filters.category && filters.category !== "null" && filters.category !== null) {
             mongoQuery.category = filters.category;
         }
 
@@ -80,12 +77,12 @@ module.exports.aiSearch = async (req, res) => {
             if (filters.minPrice) mongoQuery.price.$gte = filters.minPrice;
         }
 
-        if (filters.locationKeyword && filters.locationKeyword !== "null") {
+        if (filters.locationKeyword && filters.locationKeyword !== "null" && filters.locationKeyword !== null) {
             const rx = { $regex: filters.locationKeyword, $options: "i" };
             mongoQuery.$or = [{ location: rx }, { country: rx }, { title: rx }];
         }
 
-        // ── Step 3: Query DB and respond ──────────────────────────
+        // ── Step 3: Fetch listings ──
         const listings = await Listing.find(mongoQuery).limit(24).sort({ _id: -1 });
 
         res.json({
@@ -95,16 +92,10 @@ module.exports.aiSearch = async (req, res) => {
         });
 
     } catch (err) {
-        console.error("❌ Gemini AI error Details:", {
-            message: err.message,
-            stack: err.stack,
-            status: err.status,
-            details: err.response?.data
-        });
+        console.error("❌ Gemini 3 AI error Details:", err);
         res.status(500).json({
             error: "AI search service error.",
             details: err.message
         });
     }
 };
-
