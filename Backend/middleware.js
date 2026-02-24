@@ -69,15 +69,33 @@ module.exports.isOwner = async (req, res, next) => {
 // =======================
 // VALIDATE LISTING
 // =======================
+// module.exports.validateListing = (req, res, next) => {
+//   const { error } = listingSchema.validate(req.body);
+//   if (error) {
+//     const errMsg = error.details.map(el => el.message).join(",");
+//     throw new ExpressError(400, errMsg);
+//   } else {
+//     next();
+//   }
+// };
+
 module.exports.validateListing = (req, res, next) => {
+  // Normalize deleteImages and imageOrder to always be arrays before validation
+  if (req.body.deleteImages && !Array.isArray(req.body.deleteImages)) {
+    req.body.deleteImages = [req.body.deleteImages];
+  }
+  if (req.body.imageOrder && !Array.isArray(req.body.imageOrder)) {
+    req.body.imageOrder = [req.body.imageOrder];
+  }
+
   const { error } = listingSchema.validate(req.body);
   if (error) {
-    const errMsg = error.details.map(el => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
+    const errMsg = error.details.map((el) => el.message).join(",");
+    return next(new ExpressError(400, errMsg));
   }
+  next();
 };
+
 
 
 // =======================

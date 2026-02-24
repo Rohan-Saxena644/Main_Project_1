@@ -133,17 +133,14 @@
 // }
 
 
-
 const Listing = require("../models/listing");
 const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
-const { cloudinary } = require("../cloudConfig.js"); // ← add this line at the top
+const { cloudinary } = require("../cloudConfig.js");
 
 module.exports.index = async (req,res)=>{
-
     const { search } = req.query;
-
     let query = {};
     if (search) {
         query = {
@@ -154,13 +151,12 @@ module.exports.index = async (req,res)=>{
         ]
         };
     }
-
     const allListings = await Listing.find(query);
     res.json(allListings);
 }
 
 module.exports.showListing = async (req,res)=>{
-    let {id} = req.params ;
+    let {id} = req.params;
     const listing = await Listing.findById(id)
     .populate({
         path: "reviews",
@@ -168,12 +164,11 @@ module.exports.showListing = async (req,res)=>{
             path: "author",
         }
     })
-    .populate("owner") ;
+    .populate("owner");
     if(!listing){
         return res.status(404).json({error: "Listing not found"});
     }
-    console.log(listing);
-    res.json({listing}) ;
+    res.json({listing});
 }
 
 module.exports.createListing = async (req, res, next) => {
@@ -187,7 +182,6 @@ module.exports.createListing = async (req, res, next) => {
       return res.status(400).json({ error: "Location not found. Please try a more specific location." });
     }
 
-    // Must have at least 1 image (the main one)
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "At least one image is required" });
     }
@@ -215,11 +209,9 @@ module.exports.renderEditForm = async (req, res) => {
     if (!listing) {
         return res.status(404).json({ error: "Listing not found" });
     }
-
     res.json({ listing });
 };
 
-// ✅ FIXED: Now updates geometry when location changes
 module.exports.updateListing = async (req, res, next) => {
   try {
     let { id } = req.params;
@@ -251,43 +243,38 @@ module.exports.updateListing = async (req, res, next) => {
       { new: true }
     );
 
-    // Normalize deleteImages to always be an array
-    if (req.body.deleteImages && !Array.isArray(req.body.deleteImages)) {
-    req.body.deleteImages = [req.body.deleteImages];
-    }
-
     // Delete images the user wants removed (but never delete the main/first image)
     if (req.body.deleteImages && req.body.deleteImages.length > 0) {
-    const mainImageFilename = listing.images[0]?.filename;
+      const mainImageFilename = listing.images[0]?.filename;
 
-    for (let filename of req.body.deleteImages) {
-        if (filename === mainImageFilename) continue; // protect main photo
+      for (let filename of req.body.deleteImages) {
+        if (filename === mainImageFilename) continue;
         await cloudinary.uploader.destroy(filename);
-    }
+      }
 
-    await listing.updateOne({
+      await listing.updateOne({
         $pull: {
-        images: {
+          images: {
             filename: {
-            $in: req.body.deleteImages.filter(f => f !== mainImageFilename)
+              $in: req.body.deleteImages.filter(f => f !== mainImageFilename)
             }
+          }
         }
-        }
-    });
+      });
     }
 
     // Reorder images if imageOrder was sent
     if (req.body.imageOrder) {
-    const order = Array.isArray(req.body.imageOrder)
+      const order = Array.isArray(req.body.imageOrder)
         ? req.body.imageOrder
         : [req.body.imageOrder];
 
-    const currentListing = await Listing.findById(id);
-    const reordered = order
+      const currentListing = await Listing.findById(id);
+      const reordered = order
         .map(filename => currentListing.images.find(img => img.filename === filename))
         .filter(Boolean);
 
-    await Listing.findByIdAndUpdate(id, { images: reordered });
+      await Listing.findByIdAndUpdate(id, { images: reordered });
     }
 
     // Add new images (enforce 5 max total)
@@ -300,7 +287,7 @@ module.exports.updateListing = async (req, res, next) => {
       }
 
       const newImages = req.files
-        .slice(0, remainingSlots) // only take what fits
+        .slice(0, remainingSlots)
         .map(f => ({ url: f.path, filename: f.filename }));
 
       await listing.updateOne({ $push: { images: { $each: newImages } } });
