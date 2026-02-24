@@ -5,7 +5,7 @@ const User = require("../models/user.js");
 // =======================
 // SIGNUP
 // =======================
-module.exports.signup = async (req,res,next)=>{
+module.exports.signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
@@ -38,9 +38,9 @@ module.exports.signup = async (req,res,next)=>{
 // module.exports.login = async (req, res) => {
 //   // Passport has already authenticated and set req.user
 //   // We need to manually re-login after regeneration
-  
+
 //   const user = req.user;
-  
+
 //   req.session.regenerate((err) => {
 //     if (err) {
 //       return res.status(500).json({ error: "Session error" });
@@ -70,7 +70,7 @@ module.exports.signup = async (req,res,next)=>{
 module.exports.login = async (req, res) => {
   // If passport.authenticate("local") succeeds, req.user is already populated
   const user = req.user;
-  
+
   res.json({
     message: "Login successful",
     user: {
@@ -85,9 +85,9 @@ module.exports.login = async (req, res) => {
 // =======================
 // LOGOUT
 // =======================
-module.exports.logout = (req, res, next)=>{
+module.exports.logout = (req, res, next) => {
 
-  req.logout((err)=>{
+  req.logout((err) => {
     if (err) return next(err);
 
     // Destroy session completely
@@ -126,4 +126,44 @@ module.exports.checkAuth = (req, res) => {
   } else {
     res.json({ authenticated: false });
   }
+};
+
+
+// =======================
+// OWN PROFILE (logged-in user)
+// =======================
+module.exports.getOwnProfile = async (req, res) => {
+  const Listing = require("../models/listing.js");
+  const listings = await Listing.find({ owner: req.user._id }).sort({ _id: -1 });
+  res.json({
+    user: {
+      _id: req.user._id,
+      username: req.user.username,
+      email: req.user.email,
+    },
+    listings,
+  });
+};
+
+
+// =======================
+// PUBLIC PROFILE (by username)
+// =======================
+module.exports.getPublicProfile = async (req, res) => {
+  const Listing = require("../models/listing.js");
+  const { username } = req.params;
+
+  const user = await User.findOne({ username });
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const listings = await Listing.find({ owner: user._id }).sort({ _id: -1 });
+  res.json({
+    user: {
+      _id: user._id,
+      username: user.username,
+    },
+    listings,
+  });
 };

@@ -134,10 +134,10 @@ router.post(
       if (err) {
         return res.status(500).json({ error: "Authentication error" });
       }
-      
+
       if (!user) {
-        return res.status(401).json({ 
-          error: info?.message || "Invalid username or password" 
+        return res.status(401).json({
+          error: info?.message || "Invalid username or password"
         });
       }
 
@@ -145,7 +145,7 @@ router.post(
         if (err) {
           return res.status(500).json({ error: "Login failed" });
         }
-        
+
         return userController.login(req, res);
       });
     })(req, res, next);
@@ -176,5 +176,15 @@ router.get("/current-user", (req, res) => {
 // AUTH CHECK
 // =======================
 router.get("/auth/check", userController.checkAuth);
+
+// =======================
+// PROFILE – own profile (private, requires login)
+// =======================
+router.get("/profile", isLoggedIn, wrapAsync(userController.getOwnProfile));
+
+// =======================
+// PROFILE – public profile by username
+// =======================
+router.get("/profile/:username", wrapAsync(userController.getPublicProfile));
 
 module.exports = router;
