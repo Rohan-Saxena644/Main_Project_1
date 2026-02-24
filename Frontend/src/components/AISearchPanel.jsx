@@ -48,7 +48,9 @@ export default function AISearchPanel({ onClose }) {
             setResults(res.data.listings);
             setFilters(res.data.filters);
         } catch (err) {
-            setError(err.response?.data?.error || "AI search failed. Please try again.");
+            const errorMsg = err.response?.data?.error || "AI search failed.";
+            const details = err.response?.data?.details || "";
+            setError(details ? `${errorMsg} (${details})` : errorMsg);
         } finally {
             setLoading(false);
         }

@@ -9,7 +9,13 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Listing = require("../models/listing.js");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Note: genAI should be initialized inside or used with a getter to ensure
+// it picks up the latest env vars if they change without a full restart.
+const getGenAI = () => {
+    if (!process.env.GEMINI_API_KEY) return null;
+    return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+};
 
 // ── System prompt ──
 const SYSTEM_PROMPT = `
@@ -41,8 +47,9 @@ module.exports.aiSearch = async (req, res) => {
         return res.status(400).json({ error: "Please provide a search query." });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "AI search is not configured. Add GEMINI_API_KEY to your .env file." });
+    const genAI = getGenAI();
+    if (!genAI) {
+        return res.status(500).json({ error: "AI search is not configured. GEMINI_API_KEY is missing." });
     }
 
     try {
