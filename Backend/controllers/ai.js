@@ -48,8 +48,8 @@ module.exports.aiSearch = async (req, res) => {
     try {
         // ── Step 1: Ask Gemini to parse the query ──────────────────
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            generationConfig: { responseMimeType: "application/json" } // Force JSON
+            model: "gemini-2.0-flash",
+            generationConfig: { responseMimeType: "application/json" }
         });
 
         const prompt = `${SYSTEM_PROMPT}\n\nUser query: "${query.trim()}"`;
