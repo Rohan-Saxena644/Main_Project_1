@@ -25,7 +25,7 @@
 
 // // module.exports.renderNewForm = async (req,res)=>{
 // //     // console.log(req.user);
-    
+
 // //     // res.render("listings/new");
 // // }  REACT IMPLEMENTATION
 
@@ -59,7 +59,7 @@
 //             limit: 1,
 //         })
 //         .send();
-        
+
 //         // console.log(response.body.features[0].geometry);
 //         // res.send("done!");
 
@@ -139,36 +139,40 @@ const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 const { cloudinary } = require("../cloudConfig.js");
 
-module.exports.index = async (req,res)=>{
-    const { search } = req.query;
-    let query = {};
-    if (search) {
-        query = {
-        $or: [
-            { title: { $regex: search, $options: "i" } },
-            { location: { $regex: search, $options: "i" } },
-            { country: { $regex: search, $options: "i" } }
-        ]
-        };
-    }
-    const allListings = await Listing.find(query);
-    res.json(allListings);
+module.exports.index = async (req, res) => {
+  const { search, category } = req.query;
+  let query = {};
+
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { location: { $regex: search, $options: "i" } },
+      { country: { $regex: search, $options: "i" } }
+    ];
+  }
+
+  if (category && category !== "all") {
+    query.category = category;
+  }
+
+  const allListings = await Listing.find(query);
+  res.json(allListings);
 }
 
-module.exports.showListing = async (req,res)=>{
-    let {id} = req.params;
-    const listing = await Listing.findById(id)
+module.exports.showListing = async (req, res) => {
+  let { id } = req.params;
+  const listing = await Listing.findById(id)
     .populate({
-        path: "reviews",
-        populate: {
-            path: "author",
-        }
+      path: "reviews",
+      populate: {
+        path: "author",
+      }
     })
     .populate("owner");
-    if(!listing){
-        return res.status(404).json({error: "Listing not found"});
-    }
-    res.json({listing});
+  if (!listing) {
+    return res.status(404).json({ error: "Listing not found" });
+  }
+  res.json({ listing });
 }
 
 module.exports.createListing = async (req, res, next) => {
@@ -192,6 +196,9 @@ module.exports.createListing = async (req, res, next) => {
     newListing.owner = req.user._id;
     newListing.images = images;
     newListing.geometry = response.body.features[0].geometry;
+    if (req.body.listing.category) {
+      newListing.category = req.body.listing.category;
+    }
 
     const savedListing = await newListing.save();
     res.status(201).json({
@@ -204,12 +211,12 @@ module.exports.createListing = async (req, res, next) => {
 };
 
 module.exports.renderEditForm = async (req, res) => {
-    let { id } = req.params;
-    const listing = await Listing.findById(id);
-    if (!listing) {
-        return res.status(404).json({ error: "Listing not found" });
-    }
-    res.json({ listing });
+  let { id } = req.params;
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    return res.status(404).json({ error: "Listing not found" });
+  }
+  res.json({ listing });
 };
 
 module.exports.updateListing = async (req, res, next) => {
@@ -236,10 +243,10 @@ module.exports.updateListing = async (req, res, next) => {
     }
 
     // Update basic fields
-    const { title, description, location, country, price, geometry } = req.body.listing;
+    const { title, description, location, country, price, geometry, category } = req.body.listing;
     listing = await Listing.findByIdAndUpdate(
       id,
-      { title, description, location, country, price, geometry },
+      { title, description, location, country, price, geometry, ...(category && { category }) },
       { new: true }
     );
 
@@ -301,8 +308,8 @@ module.exports.updateListing = async (req, res, next) => {
   }
 };
 
-module.exports.destroyListing = async (req,res)=>{
-    let{id} = req.params;
-    await Listing.findByIdAndDelete(id);
-    res.json({message:"Listing deleted"});
+module.exports.destroyListing = async (req, res) => {
+  let { id } = req.params;
+  await Listing.findByIdAndDelete(id);
+  res.json({ message: "Listing deleted" });
 }

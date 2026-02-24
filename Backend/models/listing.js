@@ -1,18 +1,18 @@
-const mongoose = require("mongoose") ;
-const Schema = mongoose.Schema ;
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 const Review = require("./review.js");
 
 const listingSchema = new Schema({
     title: {
-        type: String ,
-        required: true ,
+        type: String,
+        required: true,
     },
     description: String,
     images: [
-    {
-        url: String,
-        filename: String,
-    }
+        {
+            url: String,
+            filename: String,
+        }
     ],
 
     //     // default:
@@ -22,7 +22,7 @@ const listingSchema = new Schema({
     //     //     ? "https://i.pinimg.com/736x/b8/6b/17/b86b170e78a07c37e8001350c92123bb.jpg"
     //     //     : v ,
 
-    
+
     price: Number,
     location: String,
     country: String,
@@ -39,7 +39,7 @@ const listingSchema = new Schema({
     },
 
     geometry: {
-        type:{
+        type: {
             type: String,
             enum: ['Point'],
             required: true
@@ -48,20 +48,21 @@ const listingSchema = new Schema({
         coordinates: {
             type: [Number],
             required: true
-        }   
+        }
     },
 
-    // category:{
-    //     type: String,
-    //     enum: ["mountains","arctic","farms","deserts"]
-    // } If you ever wanna implement the filter option to the listing also during creating a new listing you will need to add a category there as well
-}) ;
+    category: {
+        type: String,
+        enum: ["mountains", "arctic", "farms", "deserts", "beaches", "cities", "forests", "lakes"],
+        default: "cities",
+    },
+});
 
-listingSchema.post("findOneAndDelete", async(listing)=>{
-    if(listing){
-        await Review.deleteMany({_id: { $in: listing.reviews}}); // Explain this to yourself
+listingSchema.post("findOneAndDelete", async (listing) => {
+    if (listing) {
+        await Review.deleteMany({ _id: { $in: listing.reviews } }); // Explain this to yourself
     }
 });
 
-const Listing = mongoose.model("Listing",listingSchema) ;
-module.exports = Listing ;
+const Listing = mongoose.model("Listing", listingSchema);
+module.exports = Listing;

@@ -2,6 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 
+const CATEGORIES = [
+  { value: "mountains", label: "🏔️ Mountains" },
+  { value: "arctic", label: "🌨️ Arctic" },
+  { value: "farms", label: "🌾 Farms" },
+  { value: "deserts", label: "🏜️ Deserts" },
+  { value: "beaches", label: "🏖️ Beaches" },
+  { value: "cities", label: "🏙️ Cities" },
+  { value: "forests", label: "🌲 Forests" },
+  { value: "lakes", label: "🏞️ Lakes" },
+];
+
 export default function NewListing() {
   const navigate = useNavigate();
 
@@ -10,12 +21,13 @@ export default function NewListing() {
     description: "",
     location: "",
     country: "",
-    price: ""
+    price: "",
+    category: "cities",
   });
 
   const [images, setImages] = useState([]);
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false); // ← Add this
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,7 +37,7 @@ export default function NewListing() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSubmitting(true); // ← Lock the button
+    setSubmitting(true);
 
     try {
       const formData = new FormData();
@@ -34,7 +46,7 @@ export default function NewListing() {
       formData.append("listing[location]", form.location);
       formData.append("listing[country]", form.country);
       formData.append("listing[price]", form.price);
-      // Append each image individually — multer expects this
+      formData.append("listing[category]", form.category);
       images.forEach(img => formData.append("images", img));
 
       await api.post("/listings", formData, {
@@ -44,7 +56,7 @@ export default function NewListing() {
       navigate("/listings");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to create listing. Please try again.");
-      setSubmitting(false); // ← Only unlock on failure
+      setSubmitting(false);
     }
   };
 
@@ -73,7 +85,22 @@ export default function NewListing() {
           className="border p-2 w-full"
           onChange={handleChange} required />
 
-        <input 
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+            className="border p-2 w-full bg-white"
+          >
+            {CATEGORIES.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <input
           type="file"
           multiple
           accept="image/png, image/jpg, image/jpeg"
@@ -81,7 +108,7 @@ export default function NewListing() {
             const selected = Array.from(e.target.files).slice(0, 5);
             setImages(selected);
           }}
-          required 
+          required
         />
         {images.length > 0 && (
           <p className="text-sm text-gray-500">{images.length} image(s) selected. First one will be the main photo.</p>

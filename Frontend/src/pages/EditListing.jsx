@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/api";
 
+const CATEGORIES = [
+  { value: "mountains", label: "🏔️ Mountains" },
+  { value: "arctic", label: "🌨️ Arctic" },
+  { value: "farms", label: "🌾 Farms" },
+  { value: "deserts", label: "🏜️ Deserts" },
+  { value: "beaches", label: "🏖️ Beaches" },
+  { value: "cities", label: "🏙️ Cities" },
+  { value: "forests", label: "🌲 Forests" },
+  { value: "lakes", label: "🏞️ Lakes" },
+];
+
 export default function EditListing() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -11,12 +22,13 @@ export default function EditListing() {
     description: "",
     location: "",
     country: "",
-    price: ""
+    price: "",
+    category: "cities",
   });
 
-  const [existingImages, setExistingImages] = useState([]); // images already on the listing
-  const [newImages, setNewImages] = useState([]);           // new images user wants to add
-  const [deleteImages, setDeleteImages] = useState([]);     // filenames user wants deleted
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [deleteImages, setDeleteImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +42,8 @@ export default function EditListing() {
           description: l.description,
           location: l.location,
           country: l.country,
-          price: l.price
+          price: l.price,
+          category: l.category || "cities",
         });
         setExistingImages(l.images || []);
         setLoading(false);
@@ -47,8 +60,8 @@ export default function EditListing() {
     if (index === 0) return; // protect main photo
     setDeleteImages(prev =>
       prev.includes(filename)
-        ? prev.filter(f => f !== filename) // unmark for deletion
-        : [...prev, filename]              // mark for deletion
+        ? prev.filter(f => f !== filename)
+        : [...prev, filename]
     );
   };
 
@@ -64,13 +77,10 @@ export default function EditListing() {
       formData.append("listing[location]", form.location);
       formData.append("listing[country]", form.country);
       formData.append("listing[price]", form.price);
+      formData.append("listing[category]", form.category);
 
-      // New images to upload
       newImages.forEach(img => formData.append("images", img));
-
-      // Filenames to delete
       deleteImages.forEach(filename => formData.append("deleteImages", filename));
-
       existingImages.forEach(img => formData.append("imageOrder", img.filename));
 
       await api.put(`/listings/${id}`, formData, {
@@ -113,6 +123,21 @@ export default function EditListing() {
           className="border p-2 w-full"
           onChange={handleChange} required />
 
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+            className="border p-2 w-full bg-white"
+          >
+            {CATEGORIES.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Existing Images */}
         {existingImages.length > 0 && (
           <div>
@@ -123,9 +148,8 @@ export default function EditListing() {
                   <img
                     src={img.url}
                     alt={`listing-${index}`}
-                    className={`w-full h-24 object-cover rounded ${
-                      deleteImages.includes(img.filename) ? "opacity-30" : ""
-                    }`}
+                    className={`w-full h-24 object-cover rounded ${deleteImages.includes(img.filename) ? "opacity-30" : ""
+                      }`}
                   />
                   {index === 0 && (
                     <span className="absolute top-1 left-1 bg-black text-white text-[10px] px-1 rounded">
@@ -150,11 +174,10 @@ export default function EditListing() {
                       <button
                         type="button"
                         onClick={() => handleDeleteToggle(img.filename, index)}
-                        className={`text-xs px-1 rounded ${
-                          deleteImages.includes(img.filename)
+                        className={`text-xs px-1 rounded ${deleteImages.includes(img.filename)
                             ? "bg-green-500 text-white"
                             : "bg-red-500 text-white"
-                        }`}
+                          }`}
                       >
                         {deleteImages.includes(img.filename) ? "Undo" : "✕"}
                       </button>
