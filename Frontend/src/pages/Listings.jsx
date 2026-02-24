@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../api/api";
 import ListingCard from "../components/ListingCard";
 import Loader from "../components/Loader";
+import AISearchPanel from "../components/AISearchPanel";
 
 const CATEGORIES = [
   { value: "all", label: "🌍 All" },
@@ -20,6 +21,7 @@ export default function Listings() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const searchQuery = searchParams.get("search") || "";
   const activeCategory = searchParams.get("category") || "all";
@@ -91,16 +93,28 @@ export default function Listings() {
       {/* ───── Listings Grid ───── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* Context label */}
-        {(searchQuery || activeCategory !== "all") && (
-          <p className="text-sm text-gray-500 mb-4">
-            {searchQuery && <>Results for &ldquo;<strong>{searchQuery}</strong>&rdquo;</>}
-            {searchQuery && activeCategory !== "all" && <span className="mx-1">·</span>}
-            {activeCategory !== "all" && (
-              <>Category: <strong>{CATEGORIES.find(c => c.value === activeCategory)?.label}</strong></>
+        {/* AI Search button row */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm text-gray-500">
+            {(searchQuery || activeCategory !== "all") && (
+              <>
+                {searchQuery && <>Results for &ldquo;<strong className="text-gray-800">{searchQuery}</strong>&rdquo;</>}
+                {searchQuery && activeCategory !== "all" && <span className="mx-1">·</span>}
+                {activeCategory !== "all" && (
+                  <>Category: <strong className="text-gray-800">{CATEGORIES.find(c => c.value === activeCategory)?.label}</strong></>
+                )}
+              </>
             )}
-          </p>
-        )}
+          </div>
+
+          <button
+            onClick={() => setAiPanelOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-md hover:shadow-violet-500/40 hover:scale-105 transition-all duration-200"
+          >
+            <span>✨</span>
+            AI Search
+          </button>
+        </div>
 
         {loading ? (
           <Loader />
@@ -118,6 +132,9 @@ export default function Listings() {
           </div>
         )}
       </div>
+
+      {/* AI Search Panel modal */}
+      {aiPanelOpen && <AISearchPanel onClose={() => setAiPanelOpen(false)} />}
 
       {/* Hide scrollbar on category pills across browsers */}
       <style>{`

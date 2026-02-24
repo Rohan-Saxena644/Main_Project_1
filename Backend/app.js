@@ -16,7 +16,8 @@ const cors = require("cors");
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
-const { sessionTimeout } = require("./middleware.js"); 
+const aiRouter = require("./routes/ai.js");
+const { sessionTimeout } = require("./middleware.js");
 
 
 // =======================
@@ -107,7 +108,7 @@ const sessionOptions = {
     httpOnly: true,
     sameSite: "none", // Required for cross-domain (Frontend on Vercel -> Backend elsewhere)
     secure: true,     // Required for sameSite: "none"
-    maxAge: 24 * 60 * 60 * 1000 
+    maxAge: 24 * 60 * 60 * 1000
   },
 };
 
@@ -134,8 +135,8 @@ app.use(sessionTimeout);
 // =======================
 
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ 
-    status: "ok", 
+  res.status(200).json({
+    status: "ok",
     timestamp: Date.now(),
     message: "Server is awake"
   });
@@ -149,17 +150,18 @@ app.get("/api/health", (req, res) => {
 app.use("/api/listings", listingRouter);
 app.use("/api/listings/:id/reviews", reviewRouter);
 app.use("/api", userRouter);
+app.use("/api/ai", aiRouter);
 
 
 // =======================
 // ERROR HANDLING
 // =======================
 
-app.all("*",(req,res,next)=>{
-  next(new ExpressError(404,"Route not found"));
+app.all("*", (req, res, next) => {
+  next(new ExpressError(404, "Route not found"));
 });
 
-app.use((err,req,res,next)=>{
+app.use((err, req, res, next) => {
   const status = err.statusCode || 500;
   const message = err.message || "Something went wrong";
   res.status(status).json({ error: message });
@@ -170,6 +172,6 @@ app.use((err,req,res,next)=>{
 // SERVER START
 // =======================
 
-app.listen(8080, ()=>{
+app.listen(8080, () => {
   console.log("Server listening on port 8080");
 });
