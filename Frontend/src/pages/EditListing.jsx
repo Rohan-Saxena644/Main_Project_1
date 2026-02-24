@@ -71,6 +71,8 @@ export default function EditListing() {
       // Filenames to delete
       deleteImages.forEach(filename => formData.append("deleteImages", filename));
 
+      existingImages.forEach(img => formData.append("imageOrder", img.filename));
+
       await api.put(`/listings/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
@@ -131,17 +133,32 @@ export default function EditListing() {
                     </span>
                   )}
                   {index !== 0 && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteToggle(img.filename, index)}
-                      className={`absolute top-1 right-1 text-xs px-1 rounded ${
-                        deleteImages.includes(img.filename)
-                          ? "bg-green-500 text-white"
-                          : "bg-red-500 text-white"
-                      }`}
-                    >
-                      {deleteImages.includes(img.filename) ? "Undo" : "✕"}
-                    </button>
+                    <div className="absolute top-1 right-1 flex flex-col gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const reordered = [
+                            existingImages[index],
+                            ...existingImages.filter((_, i) => i !== index)
+                          ];
+                          setExistingImages(reordered);
+                        }}
+                        className="bg-blue-500 text-white text-[10px] px-1 rounded"
+                      >
+                        ★ Main
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteToggle(img.filename, index)}
+                        className={`text-xs px-1 rounded ${
+                          deleteImages.includes(img.filename)
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {deleteImages.includes(img.filename) ? "Undo" : "✕"}
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

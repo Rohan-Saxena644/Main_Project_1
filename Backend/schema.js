@@ -9,7 +9,15 @@ module.exports.listingSchema = Joi.object({
     price: Joi.number().required().min(0),
     images: Joi.array().items(Joi.string().allow("", null)).optional(),
   }).required(),
-  deleteImages: Joi.array().items(Joi.string()).optional() // ← moved to top level
+  deleteImages: Joi.alternatives().try(
+    Joi.array().items(Joi.string()),
+    Joi.string()
+    ).optional(),
+     
+  imageOrder: Joi.alternatives().try(
+    Joi.array().items(Joi.string()),
+    Joi.string()
+    ).optional()
 });
 
 module.exports.reviewSchema = Joi.object({

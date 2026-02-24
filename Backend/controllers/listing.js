@@ -251,24 +251,43 @@ module.exports.updateListing = async (req, res, next) => {
       { new: true }
     );
 
+    // Normalize deleteImages to always be an array
+    if (req.body.deleteImages && !Array.isArray(req.body.deleteImages)) {
+    req.body.deleteImages = [req.body.deleteImages];
+    }
+
     // Delete images the user wants removed (but never delete the main/first image)
     if (req.body.deleteImages && req.body.deleteImages.length > 0) {
-      const mainImageFilename = listing.images[0]?.filename;
+    const mainImageFilename = listing.images[0]?.filename;
 
-      for (let filename of req.body.deleteImages) {
+    for (let filename of req.body.deleteImages) {
         if (filename === mainImageFilename) continue; // protect main photo
         await cloudinary.uploader.destroy(filename);
-      }
+    }
 
-      await listing.updateOne({
+    await listing.updateOne({
         $pull: {
-          images: {
+        images: {
             filename: {
-              $in: req.body.deleteImages.filter(f => f !== mainImageFilename)
+            $in: req.body.deleteImages.filter(f => f !== mainImageFilename)
             }
-          }
         }
-      });
+        }
+    });
+    }
+
+    // Reorder images if imageOrder was sent
+    if (req.body.imageOrder) {
+    const order = Array.isArray(req.body.imageOrder)
+        ? req.body.imageOrder
+        : [req.body.imageOrder];
+
+    const currentListing = await Listing.findById(id);
+    const reordered = order
+        .map(filename => currentListing.images.find(img => img.filename === filename))
+        .filter(Boolean);
+
+    await Listing.findByIdAndUpdate(id, { images: reordered });
     }
 
     // Add new images (enforce 5 max total)
