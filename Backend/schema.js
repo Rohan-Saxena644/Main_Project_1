@@ -7,9 +7,9 @@ module.exports.listingSchema = Joi.object({
     location: Joi.string().required(),
     country: Joi.string().required(),
     price: Joi.number().required().min(0),
-    images: Joi.array().items(Joi.string().allow("", null)).optional(), // ← updated
-    deleteImages: Joi.array().items(Joi.string()).optional() // ← for delete functionality
-  }).required()
+    images: Joi.array().items(Joi.string().allow("", null)).optional(),
+  }).required(),
+  deleteImages: Joi.array().items(Joi.string()).optional() // ← moved to top level
 });
 
 module.exports.reviewSchema = Joi.object({
