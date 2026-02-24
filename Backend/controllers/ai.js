@@ -48,7 +48,7 @@ module.exports.aiSearch = async (req, res) => {
     try {
         // ── Step 1: Ask Gemini to parse the query ──────────────────
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash-preview-04-17",  // ✅ Latest available model
             generationConfig: { responseMimeType: "application/json" }
         });
 
