@@ -87,7 +87,7 @@ module.exports.aiSearch = async (req, res) => {
         });
 
     } catch (err) {
-        console.error("Gemini AI error:", err);
+        console.error("Gemini AI error:", err.message);
         res.status(500).json({ error: "AI search service error. Please try again." });
     }
 };

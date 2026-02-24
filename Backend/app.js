@@ -149,8 +149,8 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/listings", listingRouter);
 app.use("/api/listings/:id/reviews", reviewRouter);
-app.use("/api", userRouter);
 app.use("/api/ai", aiRouter);
+app.use("/api", userRouter);
 
 
 // =======================
