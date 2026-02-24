@@ -47,9 +47,10 @@ module.exports.aiSearch = async (req, res) => {
 
     try {
         // ── Step 1: Ask Gemini to parse the query ──────────────────
+        // gemini-1.5-flash is the most stable and free model currently available.
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash-preview-04-17",  // ✅ Latest available model
-            generationConfig: { responseMimeType: "application/json" }
+            model: "gemini-1.5-flash",
+            generationConfig: { responseMimeType: "application/json" } // Force JSON
         });
 
         const prompt = `${SYSTEM_PROMPT}\n\nUser query: "${query.trim()}"`;
@@ -87,7 +88,16 @@ module.exports.aiSearch = async (req, res) => {
         });
 
     } catch (err) {
-        console.error("Gemini AI error:", err.message);
-        res.status(500).json({ error: "AI search service error. Please try again." });
+        console.error("❌ Gemini AI error Details:", {
+            message: err.message,
+            stack: err.stack,
+            status: err.status,
+            details: err.response?.data
+        });
+        res.status(500).json({
+            error: "AI search service error.",
+            details: err.message
+        });
     }
 };
+
