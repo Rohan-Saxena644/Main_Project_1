@@ -21,6 +21,7 @@ export default function ListingDetails() {
   const [hoveredStar, setHoveredStar] = useState(0);
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
+  const [selectedImage, setSelectedImage] = useState(0);
 
   const mapContainer = useRef(null);
   const mapInstance = useRef(null);
@@ -205,28 +206,61 @@ export default function ListingDetails() {
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         
         {/* Image Section */}
-        <div className="relative rounded-2xl overflow-hidden shadow-2xl mb-8">
-          <img 
-            src={listing.image?.url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200"}
-            alt={listing.title}
-            className="w-full h-[400px] sm:h-[500px] object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          
-          {/* Title Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
-            <h1 className="text-3xl sm:text-5xl font-bold mb-2">{listing.title}</h1>
-            <div className="flex items-center gap-4 text-sm sm:text-base">
-              <span className="flex items-center gap-1">
-                📍 {listing.location}, {listing.country}
-              </span>
-              {listing.reviews?.length > 0 && (
+        <div className="mb-8">
+
+          {/* Main Image */}
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+            <img
+              src={
+                listing.images?.[selectedImage]?.url ||
+                listing.images?.[0]?.url ||
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200"
+              }
+              alt={listing.title}
+              className="w-full h-[400px] sm:h-[500px] object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+            {/* Title Overlay — kept exactly as before */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
+              <h1 className="text-3xl sm:text-5xl font-bold mb-2">{listing.title}</h1>
+              <div className="flex items-center gap-4 text-sm sm:text-base">
                 <span className="flex items-center gap-1">
-                  ⭐ {avgRating} ({listing.reviews.length} reviews)
+                  📍 {listing.location}, {listing.country}
                 </span>
-              )}
+                {listing.reviews?.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    ⭐ {avgRating} ({listing.reviews.length} reviews)
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Thumbnail Strip — only shows if more than 1 image */}
+          {listing.images?.length > 1 && (
+            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+              {listing.images.map((img, index) => (
+                <button
+                  key={img.filename}
+                  type="button"
+                  onClick={() => setSelectedImage(index)}
+                  className={`flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedImage === index
+                      ? "border-red-500 scale-105"
+                      : "border-transparent opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <img
+                    src={img.url}
+                    alt={`photo-${index}`}
+                    className="w-20 h-16 object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">

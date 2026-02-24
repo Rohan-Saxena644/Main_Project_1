@@ -74,7 +74,7 @@ export default function Cart() {
                   {/* Image */}
                   <div className="sm:w-48 h-48 sm:h-auto">
                     <img 
-                      src={item.listing.image?.url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400"}
+                      src={item.listing.images?.[0]?.url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400"}
                       alt={item.listing.title}
                       className="w-full h-full object-cover"
                     />

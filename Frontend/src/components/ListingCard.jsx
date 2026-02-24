@@ -6,7 +6,7 @@ export default function ListingCard({ listing }) {
       <div className="border rounded overflow-hidden hover:shadow-lg transition">
 
         <img
-          src={listing.image?.url || "https://img.freepik.com/free-photo/beautiful_1203-2633.jpg?semt=ais_hybrid&w=740&q=80"}
+          src={listing.images?.[0]?.url || "https://img.freepik.com/free-photo/beautiful_1203-2633.jpg?semt=ais_hybrid&w=740&q=80"}
           alt={listing.title}
           className="h-48 w-full object-cover"
         />

@@ -138,6 +138,7 @@ const Listing = require("../models/listing");
 const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
+const { cloudinary } = require("../cloudConfig.js"); // ← add this line at the top
 
 module.exports.index = async (req,res)=>{
 
@@ -175,90 +176,124 @@ module.exports.showListing = async (req,res)=>{
     res.json({listing}) ;
 }
 
-module.exports.createListing = async (req,res,next)=>{
+module.exports.createListing = async (req, res, next) => {
+  try {
+    const response = await geocodingClient.forwardGeocode({
+      query: req.body.listing.location,
+      limit: 1,
+    }).send();
 
-    try{
-       const response = await geocodingClient.forwardGeocode({
-            query: req.body.listing.location,
-            limit: 1,
-        })
-        .send();
-
-        let url = req.file ? req.file.path : "";
-        let filename = req.file ? req.file.filename : "";
-
-        const newListing = new Listing(req.body.listing);
-        newListing.owner = req.user._id ;
-        newListing.image = {url,filename};
-
-        newListing.geometry = response.body.features[0].geometry;
-
-        const savedListing = await newListing.save();
-        res.status(201).json({
-        message: "New listing created successfully",
-        listing: savedListing
-        }); 
-    } catch(err){
-        next(err);
-    }
-}
-
-module.exports.renderEditForm = async(req,res)=>{
-    let{id} = req.params;
-    const listing = await Listing.findById(id) ;
-    if(!listing){
-        return res.status(404).json({error: "Listing not found"});
+    if (!response.body.features.length) {
+      return res.status(400).json({ error: "Location not found. Please try a more specific location." });
     }
 
-    let originalImageUrl = listing.image.url ;
-    originalImageUrl = originalImageUrl.replace("/upload" , "/upload/h_300,w_250");
+    // Must have at least 1 image (the main one)
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "At least one image is required" });
+    }
 
-    res.json({listing , originalImageUrl}) ;
-}
+    const images = req.files.map(f => ({ url: f.path, filename: f.filename }));
+
+    const newListing = new Listing(req.body.listing);
+    newListing.owner = req.user._id;
+    newListing.images = images;
+    newListing.geometry = response.body.features[0].geometry;
+
+    const savedListing = await newListing.save();
+    res.status(201).json({
+      message: "New listing created successfully",
+      listing: savedListing
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.renderEditForm = async (req, res) => {
+    let { id } = req.params;
+    const listing = await Listing.findById(id);
+    if (!listing) {
+        return res.status(404).json({ error: "Listing not found" });
+    }
+
+    res.json({ listing });
+};
 
 // ✅ FIXED: Now updates geometry when location changes
-module.exports.updateListing = async(req,res)=>{
-    try {
-        let {id} = req.params;
-        
-        // Get the existing listing first
-        let listing = await Listing.findById(id);
-        
-        if (!listing) {
-            return res.status(404).json({error: "Listing not found"});
-        }
+module.exports.updateListing = async (req, res, next) => {
+  try {
+    let { id } = req.params;
 
-        // ✅ FIX: Check if location changed, then update geometry
-        if (req.body.listing.location && req.body.listing.location !== listing.location) {
-            const response = await geocodingClient.forwardGeocode({
-                query: req.body.listing.location,
-                limit: 1,
-            }).send();
-            
-            // Update geometry with new coordinates
-            req.body.listing.geometry = response.body.features[0].geometry;
-        }
-
-        // Update the listing with new data
-        listing = await Listing.findByIdAndUpdate(
-            id,
-            {...req.body.listing},
-            {new: true} // Return updated document
-        );
-
-        // Handle image update if new file uploaded
-        if(req.file){
-            let url = req.file.path;
-            let filename = req.file.filename;
-            listing.image = {url , filename};
-            await listing.save();
-        }
-
-        res.json({message:"Listing updated successfully", listing});
-    } catch(err) {
-        res.status(500).json({error: "Failed to update listing"});
+    let listing = await Listing.findById(id);
+    if (!listing) {
+      return res.status(404).json({ error: "Listing not found" });
     }
-}
+
+    // Update geometry if location changed
+    if (req.body.listing.location && req.body.listing.location !== listing.location) {
+      const response = await geocodingClient.forwardGeocode({
+        query: req.body.listing.location,
+        limit: 1,
+      }).send();
+
+      if (!response.body.features.length) {
+        return res.status(400).json({ error: "Location not found." });
+      }
+
+      req.body.listing.geometry = response.body.features[0].geometry;
+    }
+
+    // Update basic fields
+    const { title, description, location, country, price, geometry } = req.body.listing;
+    listing = await Listing.findByIdAndUpdate(
+      id,
+      { title, description, location, country, price, geometry },
+      { new: true }
+    );
+
+    // Delete images the user wants removed (but never delete the main/first image)
+    if (req.body.deleteImages && req.body.deleteImages.length > 0) {
+      const mainImageFilename = listing.images[0]?.filename;
+
+      for (let filename of req.body.deleteImages) {
+        if (filename === mainImageFilename) continue; // protect main photo
+        await cloudinary.uploader.destroy(filename);
+      }
+
+      await listing.updateOne({
+        $pull: {
+          images: {
+            filename: {
+              $in: req.body.deleteImages.filter(f => f !== mainImageFilename)
+            }
+          }
+        }
+      });
+    }
+
+    // Add new images (enforce 5 max total)
+    if (req.files && req.files.length > 0) {
+      const currentCount = listing.images.length;
+      const remainingSlots = 5 - currentCount;
+
+      if (remainingSlots <= 0) {
+        return res.status(400).json({ error: "Maximum 5 images allowed. Delete some first." });
+      }
+
+      const newImages = req.files
+        .slice(0, remainingSlots) // only take what fits
+        .map(f => ({ url: f.path, filename: f.filename }));
+
+      await listing.updateOne({ $push: { images: { $each: newImages } } });
+    }
+
+    const updatedListing = await Listing.findById(id);
+    res.json({ message: "Listing updated successfully", listing: updatedListing });
+
+  } catch (err) {
+    next(err);
+  }
+};
 
 module.exports.destroyListing = async (req,res)=>{
     let{id} = req.params;

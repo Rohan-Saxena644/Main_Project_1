@@ -68,18 +68,17 @@ router.route("/")
   .get(wrapAsync(listingController.index))
   .post(
     isLoggedIn,
-    upload.single("listing[image]"),
+    upload.array("images", 5),  // ← array, max 5
     validateListing,
     wrapAsync(listingController.createListing)
   );
 
-// /api/listings/:id
 router.route("/:id")
   .get(wrapAsync(listingController.showListing))
   .put(
     isLoggedIn,
     isOwner,
-    upload.single("listing[image]"),
+    upload.array("images", 5),  // ← array, max 5
     validateListing,
     wrapAsync(listingController.updateListing)
   )

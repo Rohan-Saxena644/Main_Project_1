@@ -13,7 +13,7 @@ export default function NewListing() {
     price: ""
   });
 
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false); // ← Add this
 
@@ -34,7 +34,8 @@ export default function NewListing() {
       formData.append("listing[location]", form.location);
       formData.append("listing[country]", form.country);
       formData.append("listing[price]", form.price);
-      formData.append("listing[image]", image);
+      // Append each image individually — multer expects this
+      images.forEach(img => formData.append("images", img));
 
       await api.post("/listings", formData, {
         headers: { "Content-Type": "multipart/form-data" }
@@ -72,9 +73,19 @@ export default function NewListing() {
           className="border p-2 w-full"
           onChange={handleChange} required />
 
-        <input type="file"
-          onChange={(e) => setImage(e.target.files[0])}
-          required />
+        <input 
+          type="file"
+          multiple
+          accept="image/png, image/jpg, image/jpeg"
+          onChange={(e) => {
+            const selected = Array.from(e.target.files).slice(0, 5);
+            setImages(selected);
+          }}
+          required 
+        />
+        {images.length > 0 && (
+          <p className="text-sm text-gray-500">{images.length} image(s) selected. First one will be the main photo.</p>
+        )}
 
         <button
           disabled={submitting}
