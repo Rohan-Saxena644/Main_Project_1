@@ -134,7 +134,7 @@ app.use(sessionTimeout);
 // HEALTH CHECK
 // =======================
 
-app.get("/api/health", (req, res) => {
+app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
     timestamp: Date.now(),
