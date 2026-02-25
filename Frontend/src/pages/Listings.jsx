@@ -59,14 +59,10 @@ export default function Listings() {
 
   return (
     <div>
-      {/* ───── Category Filter Bar ─────
-          NOT sticky — sits right below the Navbar, scrolls away with the page.
-          The bar is intentionally understated: smaller text, lighter weight
-          than the Navbar so the Navbar remains dominant.
-      */}
-      <div className="bg-white border-b border-gray-200">
+      {/* ───── Category Filter Bar ───── */}
+      <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
+          <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
             {CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat.value || (cat.value === "all" && activeCategory === "all");
               return (
@@ -74,11 +70,11 @@ export default function Listings() {
                   key={cat.value}
                   onClick={() => handleCategoryClick(cat.value)}
                   className={`
-                    flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium
+                    flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold border
                     transition-all duration-200 whitespace-nowrap
                     ${isActive
-                      ? "bg-black text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-teal-600 border-teal-600 text-white shadow-sm"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-teal-400 hover:text-teal-700"
                     }
                   `}
                 >
@@ -119,7 +115,7 @@ export default function Listings() {
         {loading ? (
           <Loader />
         ) : listings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 items-stretch">
             {listings.map(l => (
               <ListingCard key={l._id} listing={l} />
             ))}
