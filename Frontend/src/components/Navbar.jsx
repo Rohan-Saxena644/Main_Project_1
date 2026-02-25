@@ -26,7 +26,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-black text-white sticky top-0 z-50 shadow-md">
+    <nav className="bg-black text-white sticky top-0 z-50 shadow-md overflow-x-hidden">
       {/* Max-w-7xl and mx-auto pulls the content slightly away from the extreme edges */}
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4">
 
@@ -159,17 +159,17 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Search - Redesigned */}
-        <div className="lg:hidden mt-4">
+        {/* Mobile Search */}
+        <div className="lg:hidden mt-3">
           <form onSubmit={handleSearch} className="flex border border-gray-700 rounded-lg overflow-hidden w-full bg-white/5">
             <input
               type="text"
               placeholder="Search places..."
-              className="px-4 py-2.5 outline-none flex-1 text-white bg-transparent text-sm"
+              className="px-3 py-2.5 outline-none flex-1 min-w-0 text-white bg-transparent text-sm truncate"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button className="bg-red-500 text-white px-5 hover:bg-red-600 transition-colors">
+            <button className="bg-teal-600 text-white px-4 flex-shrink-0 hover:bg-teal-500 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>

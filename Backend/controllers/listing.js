@@ -138,11 +138,19 @@ const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 const { cloudinary } = require("../cloudConfig.js");
+const { cacheGet, cacheSet, cacheDel } = require("../utils/cache");
 
 module.exports.index = async (req, res) => {
   const { search, category } = req.query;
-  let query = {};
 
+  // Build a deterministic cache key from query params
+  const cacheKey = `listings:all:search=${search || ""}:cat=${category || "all"}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
+  let query = {};
   if (search) {
     query.$or = [
       { title: { $regex: search, $options: "i" } },
@@ -150,28 +158,35 @@ module.exports.index = async (req, res) => {
       { country: { $regex: search, $options: "i" } }
     ];
   }
-
   if (category && category !== "all") {
     query.category = category;
   }
 
   const allListings = await Listing.find(query);
+  await cacheSet(cacheKey, allListings); // cache for 5 minutes
   res.json(allListings);
 }
 
 module.exports.showListing = async (req, res) => {
   let { id } = req.params;
+
+  const cacheKey = `listings:${id}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   const listing = await Listing.findById(id)
     .populate({
       path: "reviews",
-      populate: {
-        path: "author",
-      }
+      populate: { path: "author" }
     })
     .populate("owner");
   if (!listing) {
     return res.status(404).json({ error: "Listing not found" });
   }
+
+  await cacheSet(cacheKey, { listing });
   res.json({ listing });
 }
 
@@ -201,6 +216,8 @@ module.exports.createListing = async (req, res, next) => {
     }
 
     const savedListing = await newListing.save();
+    // Bust the listings index cache since a new listing was added
+    await cacheDel("listings:all:*");
     res.status(201).json({
       message: "New listing created successfully",
       listing: savedListing
@@ -301,6 +318,8 @@ module.exports.updateListing = async (req, res, next) => {
     }
 
     const updatedListing = await Listing.findById(id);
+    // Bust the cache for this specific listing and all index variants
+    await cacheDel(`listings:${id}`, "listings:all:*");
     res.json({ message: "Listing updated successfully", listing: updatedListing });
 
   } catch (err) {
@@ -311,5 +330,7 @@ module.exports.updateListing = async (req, res, next) => {
 module.exports.destroyListing = async (req, res) => {
   let { id } = req.params;
   await Listing.findByIdAndDelete(id);
+  // Bust both the individual listing cache and all index variants
+  await cacheDel(`listings:${id}`, "listings:all:*");
   res.json({ message: "Listing deleted" });
 }
