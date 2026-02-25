@@ -99,11 +99,11 @@ export default function Home() {
             placeholder="Where do you want to go?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-6 py-4 bg-transparent outline-none text-white placeholder-white/50 text-base"
+            className="flex-1 min-w-0 px-6 py-4 bg-transparent outline-none text-white placeholder-white/50 text-base truncate"
           />
           <button
             type="submit"
-            className="bg-teal-500 hover:bg-teal-400 transition-colors text-white font-bold px-7 flex items-center gap-2 text-sm"
+            className="flex-shrink-0 bg-teal-500 hover:bg-teal-400 transition-colors text-white font-bold px-7 flex items-center gap-2 text-sm"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
