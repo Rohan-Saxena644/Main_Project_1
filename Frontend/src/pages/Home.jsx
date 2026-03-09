@@ -83,7 +83,7 @@ export default function Home() {
 
         {/* Headline */}
         <h1 className="text-6xl md:text-8xl font-extrabold mb-5 animate-fade-in leading-tight tracking-tight">
-          Wander<span className="text-teal-400">lust</span>
+          Lodg<span className="text-teal-400">R</span>
         </h1>
         <p className="text-xl md:text-2xl mb-10 text-gray-300 animate-fade-in-delay max-w-xl font-light leading-relaxed">
           Discover extraordinary places to stay around the world.

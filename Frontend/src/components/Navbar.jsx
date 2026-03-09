@@ -39,7 +39,7 @@ export default function Navbar() {
             className="text-2xl font-extrabold tracking-tight hover:text-red-500 transition-colors"
             onClick={handleLinkClick}
           >
-            Wanderlust
+            LodgR
           </Link>
 
           {/* Desktop Search - Centered */}
