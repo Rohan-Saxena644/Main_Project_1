@@ -18,6 +18,8 @@ const CATEGORIES = [
 ];
 
 export default function Listings() {
+
+  console.log("API URL:", import.meta.env.VITE_API_URL);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
