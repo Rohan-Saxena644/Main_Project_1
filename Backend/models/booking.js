@@ -73,4 +73,14 @@ bookingSchema.index({
   status: 1,
 });
 
+bookingSchema.index({
+  guest: 1,
+  createdAt: -1,
+});
+
+bookingSchema.index({
+  host: 1,
+  createdAt: -1,
+});
+
 module.exports = mongoose.model("Booking", bookingSchema);

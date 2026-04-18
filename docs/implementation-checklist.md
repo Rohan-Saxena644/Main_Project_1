@@ -24,8 +24,8 @@ The sequence is optimized for:
 
 - [</] create `Backend/models/booking.js`
 - [</] define booking schema fields
-- [ ] add indexes for listing/date/status and user booking history
-- [ ] decide whether to add derived fields to `Listing`
+- [x] add indexes for listing/date/status and user booking history
+- [x] decide whether to add derived fields to `Listing`
 
 ### Backend API work
 
