@@ -29,11 +29,11 @@ The sequence is optimized for:
 
 ### Backend API work
 
-- [ ] create `Backend/controllers/booking.js`
-- [ ] create `Backend/routes/booking.js`
-- [ ] register booking routes in `Backend/app.js`
-- [ ] add validation middleware for booking payloads
-- [ ] add pagination support for booking history endpoints
+- [x] create `Backend/controllers/booking.js`
+- [x] create `Backend/routes/booking.js`
+- [x] register booking routes in `Backend/app.js`
+- [x] add validation middleware for booking payloads
+- [x] add pagination support for booking history endpoints
 
 ### Booking logic
 

@@ -27,3 +27,19 @@ module.exports.reviewSchema = Joi.object({
     comment: Joi.string().required()
   }).required()
 });
+
+module.exports.bookingSchema = Joi.object({
+  listingId: Joi.string().required(),
+  checkInDate: Joi.date().iso().required(),
+  checkOutDate: Joi.date().iso().greater(Joi.ref("checkInDate")).required(),
+});
+
+module.exports.bookingQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(10),
+  status: Joi.string().valid("all", "upcoming", "past", "active", "cancelled", "confirmed").default("all"),
+});
+
+module.exports.cancelBookingSchema = Joi.object({
+  cancellationReason: Joi.string().trim().max(300).allow("", null),
+});

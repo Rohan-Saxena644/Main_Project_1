@@ -14,6 +14,7 @@ const MongoStore = require("connect-mongo");
 const cors = require("cors");
 
 const listingRouter = require("./routes/listing.js");
+const bookingRouter = require("./routes/booking.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 const aiRouter = require("./routes/ai.js");
@@ -148,6 +149,7 @@ app.get("/health", (req, res) => {
 // =======================
 
 app.use("/api/listings", listingRouter);
+app.use("/api/bookings", bookingRouter);
 app.use("/api/listings/:id/reviews", reviewRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api", userRouter);
