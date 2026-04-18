@@ -108,8 +108,8 @@ Important:
 
 Suggested routes:
 
-- `GET /api/bookings/me`
-- `GET /api/bookings/host`
+- `GET /api/bookings/me?page=1&limit=10&status=upcoming`
+- `GET /api/bookings/host?page=1&limit=10&status=upcoming`
 - `GET /api/bookings/:id`
 - `POST /api/bookings`
 - `PATCH /api/bookings/:id/cancel`
@@ -177,6 +177,13 @@ Recommended controller functions:
 - `cancelBooking`
 - `getListingAvailability`
 
+Pagination should be part of the booking history design from the start:
+
+- sort booking history by `bookedAt` descending
+- accept `page` and `limit` query params
+- return paginated metadata like `page`, `limit`, `total`, and `totalPages`
+- support simple status filters such as `upcoming`, `past`, and `cancelled`
+
 ## Booking Authorization Rules
 
 - only logged-in users can create bookings
@@ -193,6 +200,14 @@ Backend checks should include:
 - requested dates must be valid dates
 - `checkInDate` must be earlier than `checkOutDate`
 - booking cannot be created for past check-in dates if you want stricter rules
+
+For now, keep the booking history design simple:
+
+- do not add snapshot fields yet
+- do not add denormalized booking counters on `User` yet
+- do not add archival logic yet
+
+Those can all be added later once the base booking flow is working well.
 
 ## Frontend Booking Flow
 

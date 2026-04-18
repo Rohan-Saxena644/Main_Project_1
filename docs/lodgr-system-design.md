@@ -173,6 +173,8 @@ Core fields:
 - status
 - bookingCode
 
+Booking history should be fetched from the `Booking` collection with pagination, not from arrays stored on the `User` document.
+
 ### Conversations
 
 Container for host-guest discussion:

@@ -14,16 +14,16 @@ The sequence is optimized for:
 ## Phase 0: Branch And Baseline
 
 - [x] create `update` branch
-- [ ] confirm app still starts on the new branch
-- [ ] capture current API behavior for listing read endpoints
-- [ ] note current cache keys and TTL behavior
+- [DONE] confirm app still starts on the new branch
+- [Kind of Done will re see wih postman later] capture current API behavior for listing read endpoints
+- [noted TTl is 5 mins for everything and currently only two main cache keys] note current cache keys and TTL behavior
 
 ## Phase 1: Add Booking Domain
 
 ### Backend model work
 
-- [ ] create `Backend/models/booking.js`
-- [ ] define booking schema fields
+- [</] create `Backend/models/booking.js`
+- [</] define booking schema fields
 - [ ] add indexes for listing/date/status and user booking history
 - [ ] decide whether to add derived fields to `Listing`
 
@@ -33,6 +33,7 @@ The sequence is optimized for:
 - [ ] create `Backend/routes/booking.js`
 - [ ] register booking routes in `Backend/app.js`
 - [ ] add validation middleware for booking payloads
+- [ ] add pagination support for booking history endpoints
 
 ### Booking logic
 
@@ -43,6 +44,8 @@ The sequence is optimized for:
 - [ ] implement overlap check for confirmed bookings
 - [ ] wrap booking create flow in a Mongo transaction
 - [ ] implement cancel booking flow
+- [ ] implement paginated `getMyBookings`
+- [ ] implement paginated `getHostBookings`
 
 ### Frontend integration
 
@@ -124,6 +127,12 @@ The sequence is optimized for:
 - [ ] add booking indexes for overlap and history queries
 - [ ] review regex search and plan upgrade path
 - [ ] measure slow queries before and after indexes
+
+## Deferred For Later
+
+- [ ] snapshot fields for booking history UI
+- [ ] denormalized booking counters on `User`
+- [ ] archival strategy for very old bookings
 
 ## Phase 7: Infra And Product Enhancements
 
