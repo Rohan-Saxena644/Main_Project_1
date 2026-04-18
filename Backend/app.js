@@ -20,6 +20,7 @@ const userRouter = require("./routes/user.js");
 const aiRouter = require("./routes/ai.js");
 const { sessionTimeout } = require("./middleware.js");
 const isProduction = process.env.NODE_ENV === "production";
+const { generalLimiter } = require("./utils/rateLimiter");
 
 
 // =======================
@@ -71,6 +72,9 @@ app.use(cors({
   },
   credentials: true
 }));
+
+
+app.use("/api", generalLimiter);
 
 
 // =======================

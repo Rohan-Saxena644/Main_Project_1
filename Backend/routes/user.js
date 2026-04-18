@@ -118,17 +118,19 @@ const wrapAsync = require("../utils/wrapAsync");
 const passport = require("passport");
 const { saveRedirectUrl, isLoggedIn } = require("../middleware.js");
 const userController = require("../controllers/user.js");
+const { authLimiter } = require("../utils/rateLimiter");
 
 // =======================
 // SIGNUP
 // =======================
-router.post("/signup", wrapAsync(userController.signup));
+router.post("/signup",authLimiter, wrapAsync(userController.signup));
 
 // =======================
 // LOGIN - WITH PROPER ERROR HANDLING
 // =======================
 router.post(
   "/login",
+  authLimiter,
   (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) {

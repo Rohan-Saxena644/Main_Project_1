@@ -1,25 +1,10 @@
-/**
- * utils/cache.js
- *
- * Redis caching utility — Phase 3 redesign.
- *
- * Key changes from the old version:
- *   - No more redis.keys() / wildcard KEYS scan (blocking O(N), never safe in prod)
- *   - Separate TTLs per key type so hot/cold data ages differently
- *   - Versioned list keys: incrementing listing:list:version makes all old
- *     list cache entries unreachable. They expire on their own TTL.
- *     No manual deletion, no scan needed.
- *   - Named key helpers so key strings are never hardcoded in controllers
- */
 
 const Redis = require("ioredis");
 const crypto = require("crypto");
 
 let client = null;
 
-// -----------------------------------------------------------------
-// TTL config — tweak these without touching controllers
-// -----------------------------------------------------------------
+
 const TTL = {
   detail:       60 * 10,   // 10 min  — only changes on listing edit/delete
   availability: 60 * 2,    // 2 min   — changes every time a booking is made/cancelled
@@ -27,14 +12,12 @@ const TTL = {
   featured:     60 * 15,   // 15 min  — home page curated list
 };
 
-// -----------------------------------------------------------------
-// Redis client (lazy, graceful no-op when REDIS_URL is not set)
-// -----------------------------------------------------------------
+
 function getClient() {
   if (client) return client;
 
   if (!process.env.REDIS_URL) {
-    return null; // no-op mode — app still works, just without cache
+    return null; 
   }
 
   try {
@@ -58,9 +41,7 @@ function getClient() {
   }
 }
 
-// -----------------------------------------------------------------
-// Key helpers — all key strings live here, never in controllers
-// -----------------------------------------------------------------
+
 
 /** Full listing document + reviews + owner */
 function detailKey(id) {
@@ -114,9 +95,7 @@ function featuredKey() {
   return `listing:featured`;
 }
 
-// -----------------------------------------------------------------
-// Core get / set / del
-// -----------------------------------------------------------------
+
 
 async function cacheGet(key) {
   const redis = getClient();
@@ -135,7 +114,6 @@ async function cacheSet(key, value, ttl = TTL.detail) {
   try {
     await redis.set(key, JSON.stringify(value), "EX", ttl);
   } catch {
-    // already responded to the user — silently skip
   }
 }
 
@@ -147,13 +125,10 @@ async function cacheDel(...keys) {
   try {
     await redis.del(...flat);
   } catch {
-    // silently skip
   }
 }
 
-// -----------------------------------------------------------------
-// Invalidation helpers — called from controllers
-// -----------------------------------------------------------------
+
 
 /** Called when a listing is edited or deleted */
 async function invalidateListingDetail(id) {

@@ -62,6 +62,7 @@ const listingController = require("../controllers/listing.js");
 const multer  = require("multer");
 const { storage } = require("../cloudConfig.js");
 const upload = multer({ storage });
+const { writeLimiter } = require("../utils/rateLimiter");
 
 // /api/listings
 router.route("/")
@@ -70,6 +71,7 @@ router.route("/")
     isLoggedIn,
     upload.array("images", 5),  // ← array, max 5
     validateListing,
+    writeLimiter,
     wrapAsync(listingController.createListing)
   );
 
@@ -80,11 +82,13 @@ router.route("/:id")
     isOwner,
     upload.array("images", 5),  // ← array, max 5
     validateListing,
+    writeLimiter,
     wrapAsync(listingController.updateListing)
   )
   .delete(
     isLoggedIn,
     isOwner,
+    writeLimiter,
     wrapAsync(listingController.destroyListing)
   );
 
