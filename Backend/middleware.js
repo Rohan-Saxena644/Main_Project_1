@@ -2,7 +2,14 @@
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
 const ExpressError = require("./utils/ExpressError.js");
-const { listingSchema, reviewSchema, bookingSchema, bookingQuerySchema, cancelBookingSchema } = require("./schema.js");
+const {
+  listingSchema,
+  reviewSchema,
+  bookingSchema,
+  bookingQuerySchema,
+  cancelBookingSchema,
+  bookingAvailabilitySchema,
+} = require("./schema.js");
 
 
 // =======================
@@ -137,6 +144,16 @@ module.exports.validateBookingCancellation = (req, res, next) => {
     return next(new ExpressError(400, errMsg));
   }
   req.body = value;
+  next();
+};
+
+module.exports.validateBookingAvailability = (req, res, next) => {
+  const { error, value } = bookingAvailabilitySchema.validate(req.query);
+  if (error) {
+    const errMsg = error.details.map((el) => el.message).join(",");
+    return next(new ExpressError(400, errMsg));
+  }
+  req.query = value;
   next();
 };
 

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
@@ -11,16 +12,28 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    // Load cart from localStorage on init
-    const savedCart = localStorage.getItem("wanderlust-cart");
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const { user } = useAuth();
+  const storageKey = useMemo(
+    () => (user?._id ? `wanderlust-cart:${user._id}` : "wanderlust-cart:guest"),
+    [user?._id]
+  );
+  const [cartItems, setCartItems] = useState([]);
+
+  useEffect(() => {
+    const savedCart = localStorage.getItem(storageKey);
+    setCartItems(savedCart ? JSON.parse(savedCart) : []);
+  }, [storageKey]);
 
   // Save to localStorage whenever cart changes
   useEffect(() => {
-    localStorage.setItem("wanderlust-cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    localStorage.setItem(storageKey, JSON.stringify(cartItems));
+  }, [cartItems, storageKey]);
+
+  useEffect(() => {
+    if (!user) {
+      setCartItems([]);
+    }
+  }, [user]);
 
   const addToCart = (listing, checkInDate, checkOutDate, nights) => {
     const cartItem = {
@@ -67,7 +80,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const getCartCount = () => {
-    return cartItems.length;
+    return user ? cartItems.length : 0;
   };
 
   return (

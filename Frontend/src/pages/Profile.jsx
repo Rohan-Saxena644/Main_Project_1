@@ -22,11 +22,21 @@ export default function Profile() {
     const navigate = useNavigate();
 
     const [profileData, setProfileData] = useState(null);
+    const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [bookingsLoading, setBookingsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [bookingError, setBookingError] = useState("");
     const [activeFilter, setActiveFilter] = useState("all");
 
     const isOwnProfile = !username || (authUser && authUser.username === username);
+
+    const formatDate = (dateString) =>
+        new Date(dateString).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -34,6 +44,14 @@ export default function Profile() {
                 const endpoint = username ? `/profile/${username}` : "/profile";
                 const res = await api.get(endpoint);
                 setProfileData(res.data);
+
+                if (!username) {
+                    setBookingsLoading(true);
+                    const bookingsRes = await api.get("/bookings/me", {
+                        params: { page: 1, limit: 20, status: "all" }
+                    });
+                    setBookings(bookingsRes.data.bookings || []);
+                }
             } catch (err) {
                 if (err.response?.status === 401) {
                     navigate("/login");
@@ -41,11 +59,32 @@ export default function Profile() {
                     setError(err.response?.data?.error || "Profile not found");
                 }
             } finally {
+                setBookingsLoading(false);
                 setLoading(false);
             }
         };
         fetchProfile();
     }, [username, navigate]);
+
+    const handleCancelBooking = async (bookingId) => {
+        const confirmed = window.confirm("Do you want to cancel this booking?");
+        if (!confirmed) return;
+
+        try {
+            setBookingError("");
+            const res = await api.patch(`/bookings/${bookingId}/cancel`, {
+                cancellationReason: "Cancelled by guest from profile",
+            });
+
+            setBookings((prev) =>
+                prev.map((booking) =>
+                    booking._id === bookingId ? res.data.booking : booking
+                )
+            );
+        } catch (err) {
+            setBookingError(err.response?.data?.error || "Unable to cancel booking right now");
+        }
+    };
 
     if (loading) return <Loader />;
 
@@ -129,6 +168,89 @@ export default function Profile() {
             </div>
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+                {isOwnProfile && (
+                    <div className="mb-10">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-xl font-bold text-gray-900">Your Bookings</h2>
+                        </div>
+
+                        {bookingError && (
+                            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+                                {bookingError}
+                            </div>
+                        )}
+
+                        {bookingsLoading ? (
+                            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-gray-500">
+                                Loading your bookings...
+                            </div>
+                        ) : bookings.length > 0 ? (
+                            <div className="space-y-4 mb-8">
+                                {bookings.map((booking) => (
+                                    <div
+                                        key={booking._id}
+                                        className="relative bg-white rounded-xl border border-gray-100 shadow-sm p-5"
+                                    >
+                                        {booking.status === "confirmed" && (
+                                            <button
+                                                onClick={() => handleCancelBooking(booking._id)}
+                                                className="absolute top-4 right-4 text-red-500 hover:text-red-700 text-2xl leading-none"
+                                                aria-label="Cancel booking"
+                                                title="Cancel booking"
+                                            >
+                                                ×
+                                            </button>
+                                        )}
+
+                                        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                                            <img
+                                                src={booking.listing?.images?.[0]?.url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400"}
+                                                alt={booking.listing?.title || "Booked listing"}
+                                                className="w-full sm:w-40 h-28 object-cover rounded-lg"
+                                            />
+
+                                            <div className="flex-1">
+                                                <h3 className="text-lg font-semibold text-gray-900">
+                                                    {booking.listing?.title || "Listing"}
+                                                </h3>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    {booking.listing?.location}, {booking.listing?.country}
+                                                </p>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 text-sm text-gray-700">
+                                                    <p><span className="font-semibold">Check-in:</span> {formatDate(booking.checkInDate)}</p>
+                                                    <p><span className="font-semibold">Check-out:</span> {formatDate(booking.checkOutDate)}</p>
+                                                    <p><span className="font-semibold">Nights:</span> {booking.nights}</p>
+                                                    <p><span className="font-semibold">Total:</span> ₹{booking.totalPrice?.toLocaleString("en-IN")}</p>
+                                                </div>
+
+                                                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                                                    <span
+                                                        className={`inline-flex items-center rounded-full px-3 py-1 font-medium ${
+                                                            booking.status === "cancelled"
+                                                                ? "bg-red-100 text-red-700"
+                                                                : "bg-emerald-100 text-emerald-700"
+                                                        }`}
+                                                    >
+                                                        {booking.status}
+                                                    </span>
+                                                    <span className="text-gray-500">
+                                                        Booking Code: {booking.bookingCode}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-gray-500 mb-8">
+                                You have not booked any listings yet.
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* ── Stats Row ── */}
                 {listings.length > 0 && (

@@ -281,3 +281,34 @@ module.exports.cancelBooking = async (req, res) => {
     booking,
   });
 };
+
+module.exports.getListingAvailability = async (req, res) => {
+  const { listingId } = req.params;
+  const { checkInDate, checkOutDate } = req.query;
+  const normalizedCheckIn = normalizeDate(checkInDate);
+  const normalizedCheckOut = normalizeDate(checkOutDate);
+
+  const listing = await Listing.findById(listingId).select("_id bookedTill bookingStatus");
+  if (!listing) {
+    throw new ExpressError(404, "Listing not found");
+  }
+
+  const overlappingBooking = await Booking.findOne({
+    listing: listingId,
+    status: "confirmed",
+    checkInDate: { $lt: normalizedCheckOut },
+    checkOutDate: { $gt: normalizedCheckIn },
+  }).select("checkInDate checkOutDate");
+
+  res.json({
+    available: !overlappingBooking,
+    bookedTill: listing.bookedTill,
+    bookingStatus: listing.bookingStatus,
+    overlappingBooking: overlappingBooking
+      ? {
+          checkInDate: overlappingBooking.checkInDate,
+          checkOutDate: overlappingBooking.checkOutDate,
+        }
+      : null,
+  });
+};

@@ -22,6 +22,11 @@ export default function ListingDetails() {
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
+  const [availability, setAvailability] = useState({
+    loading: false,
+    available: true,
+    message: "",
+  });
 
   const mapContainer = useRef(null);
   const mapInstance = useRef(null);
@@ -54,6 +59,11 @@ export default function ListingDetails() {
       return;
     }
 
+    if (!availability.available) {
+      alert(availability.message || "Selected dates are not available for this listing");
+      return;
+    }
+
     addToCart(listing, checkInDate, checkOutDate, nights);
     alert("Added to cart! 🎉");
   };
@@ -64,6 +74,46 @@ export default function ListingDetails() {
       .then(res => setListing(res.data.listing))
       .catch(() => navigate("/notfound"));
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!checkInDate || !checkOutDate || calculateNights() <= 0 || !listing?._id) {
+      setAvailability({
+        loading: false,
+        available: true,
+        message: "",
+      });
+      return;
+    }
+
+    let isMounted = true;
+    setAvailability((prev) => ({ ...prev, loading: true, message: "" }));
+
+    api.get(`/bookings/availability/${listing._id}`, {
+      params: { checkInDate, checkOutDate },
+    })
+      .then((res) => {
+        if (!isMounted) return;
+        setAvailability({
+          loading: false,
+          available: res.data.available,
+          message: res.data.available
+            ? ""
+            : "These selected dates are already booked. Please choose different dates.",
+        });
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setAvailability({
+          loading: false,
+          available: false,
+          message: error.response?.data?.error || "Unable to check availability right now.",
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [checkInDate, checkOutDate, listing?._id]);
 
   // Map initialization - FIXED
   useEffect(() => {
@@ -482,12 +532,30 @@ export default function ListingDetails() {
                   </div>
                 )}
 
+                {checkInDate && checkOutDate && availability.loading && (
+                  <div className="text-sm text-gray-500">Checking availability...</div>
+                )}
+
+                {checkInDate && checkOutDate && !availability.loading && !availability.available && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {availability.message}
+                  </div>
+                )}
+
                 <button
                   onClick={handleAddToCart}
-                  disabled={!user || isOwner}
+                  disabled={!user || isOwner || availability.loading || !availability.available}
                   className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
-                  {!user ? "Login to Book" : isOwner ? "You Own This Listing" : "Add to Cart"}
+                  {!user
+                    ? "Login to Book"
+                    : isOwner
+                    ? "You Own This Listing"
+                    : availability.loading
+                    ? "Checking Availability..."
+                    : !availability.available
+                    ? "Dates Unavailable"
+                    : "Add to Cart"}
                 </button>
 
                 {!user && (

@@ -7,6 +7,7 @@ const {
   validateBooking,
   validateBookingQuery,
   validateBookingCancellation,
+  validateBookingAvailability,
 } = require("../middleware");
 
 router.get(
@@ -21,6 +22,12 @@ router.get(
   isLoggedIn,
   validateBookingQuery,
   wrapAsync(bookingController.getHostBookings)
+);
+
+router.get(
+  "/availability/:listingId",
+  validateBookingAvailability,
+  wrapAsync(bookingController.getListingAvailability)
 );
 
 router.get(

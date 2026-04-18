@@ -43,3 +43,8 @@ module.exports.bookingQuerySchema = Joi.object({
 module.exports.cancelBookingSchema = Joi.object({
   cancellationReason: Joi.string().trim().max(300).allow("", null),
 });
+
+module.exports.bookingAvailabilitySchema = Joi.object({
+  checkInDate: Joi.date().iso().required(),
+  checkOutDate: Joi.date().iso().greater(Joi.ref("checkInDate")).required(),
+});
