@@ -168,9 +168,10 @@ Core fields:
 - checkInDate
 - checkOutDate
 - nights
+- pricePerNight
 - totalPrice
 - status
-- paymentStatus
+- bookingCode
 
 ### Conversations
 
