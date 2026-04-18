@@ -19,6 +19,7 @@ const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 const aiRouter = require("./routes/ai.js");
 const { sessionTimeout } = require("./middleware.js");
+const isProduction = process.env.NODE_ENV === "production";
 
 
 // =======================
@@ -104,11 +105,11 @@ const sessionOptions = {
   secret: process.env.SECRET || "devsecret",
   resave: false,
   saveUninitialized: false,
-  proxy: true, // Tell express-session to trust the Vercel/Reverse Proxy
+  proxy: isProduction, // Only needed behind a real proxy in production
   cookie: {
     httpOnly: true,
-    sameSite: "none", // Required for cross-domain (Frontend on Vercel -> Backend elsewhere)
-    secure: true,     // Required for sameSite: "none"
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
     maxAge: 24 * 60 * 60 * 1000
   },
 };

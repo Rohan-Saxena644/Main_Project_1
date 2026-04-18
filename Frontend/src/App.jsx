@@ -16,7 +16,8 @@ import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 export default function App() {
   const [isServerAwake, setIsServerAwake] = useState(false);
@@ -25,7 +26,7 @@ export default function App() {
   useEffect(() => {
     const pingServer = async () => {
       try {
-        await fetch(`${API_URL}/api/health`, {
+        await fetch(`${SERVER_URL}/health`, {
           method: 'GET',
           credentials: 'include'
         });

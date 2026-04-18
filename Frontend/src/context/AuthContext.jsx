@@ -177,9 +177,9 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     try {
-      const response = await api.post("/login", credentials);
-      const userData = response.data.user; 
-      setUser(userData);
+      await api.post("/login", credentials);
+      const res = await api.get("/current-user");
+      setUser(res.data);
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.error || "Login failed";

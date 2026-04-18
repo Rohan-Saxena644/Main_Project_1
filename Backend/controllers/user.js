@@ -1,5 +1,6 @@
 
 const User = require("../models/user.js");
+const isProduction = process.env.NODE_ENV === "production";
 
 
 // =======================
@@ -100,8 +101,8 @@ module.exports.logout = (req, res, next) => {
       res.clearCookie('connect.sid', {
         path: '/',
         httpOnly: true,
-        secure: true, // FIXED: Always true in production
-        sameSite: 'none'
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax'
       });
 
       res.json({ message: "Logout successful" });
