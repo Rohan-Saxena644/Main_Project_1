@@ -56,6 +56,23 @@ const listingSchema = new Schema({
         enum: ["mountains", "arctic", "farms", "deserts", "beaches", "cities", "forests", "lakes"],
         default: "cities",
     },
+
+    bookedTill: {
+        type: Date,
+        default: null,
+    },
+
+    bookingStatus: {
+        type: String,
+        enum: ["available", "booked"],
+        default: "available",
+    },
+
+    activeBookingCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
 });
 
 listingSchema.post("findOneAndDelete", async (listing) => {
