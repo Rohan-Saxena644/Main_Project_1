@@ -1,19 +1,69 @@
 import { useCart } from "../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
+import api from "../api/api";
 
 export default function Cart() {
   const { cartItems, removeFromCart, clearCart, getTotalPrice } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutSuccess, setCheckoutSuccess] = useState("");
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!user) {
       navigate("/login");
       return;
     }
-    // TODO: Implement checkout logic
-    alert("Checkout functionality coming soon!");
+
+    setIsSubmitting(true);
+    setCheckoutError("");
+    setCheckoutSuccess("");
+
+    const results = await Promise.allSettled(
+      cartItems.map((item) =>
+        api.post("/bookings", {
+          listingId: item.id,
+          checkInDate: item.checkInDate,
+          checkOutDate: item.checkOutDate,
+        })
+      )
+    );
+
+    const successfulItems = [];
+    const failedMessages = [];
+
+    results.forEach((result, index) => {
+      const item = cartItems[index];
+
+      if (result.status === "fulfilled") {
+        successfulItems.push(item);
+      } else {
+        failedMessages.push(
+          `${item.listing.title}: ${result.reason?.response?.data?.error || "Booking failed"}`
+        );
+      }
+    });
+
+    successfulItems.forEach((item) => {
+      removeFromCart(item.id, item.checkInDate);
+    });
+
+    if (successfulItems.length > 0) {
+      setCheckoutSuccess(
+        successfulItems.length === 1
+          ? "Your booking was confirmed."
+          : `${successfulItems.length} bookings were confirmed.`
+      );
+    }
+
+    if (failedMessages.length > 0) {
+      setCheckoutError(failedMessages.join(" "));
+    }
+
+    setIsSubmitting(false);
   };
 
   const formatDate = (dateString) => {
@@ -27,7 +77,12 @@ export default function Cart() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="text-center">
+        <div className="text-center max-w-lg">
+          {checkoutSuccess && (
+            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
+              {checkoutSuccess}
+            </div>
+          )}
           <div className="text-6xl mb-4">🛒</div>
           <h2 className="text-3xl font-bold text-gray-800 mb-4">Your cart is empty</h2>
           <p className="text-gray-600 mb-8">Start adding amazing places to your travel plans!</p>
@@ -62,6 +117,18 @@ export default function Cart() {
             Clear Cart
           </button>
         </div>
+
+        {checkoutSuccess && (
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
+            {checkoutSuccess}
+          </div>
+        )}
+
+        {checkoutError && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {checkoutError}
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-8">
           
@@ -169,9 +236,10 @@ export default function Cart() {
 
               <button
                 onClick={handleCheckout}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg hover:shadow-xl mb-3"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg hover:shadow-xl mb-3 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Proceed to Checkout
+                {isSubmitting ? "Confirming Bookings..." : "Confirm Booking"}
               </button>
 
               <Link 

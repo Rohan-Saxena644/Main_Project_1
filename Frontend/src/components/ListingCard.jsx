@@ -37,6 +37,15 @@ export default function ListingCard({ listing }) {
               {CATEGORY_LABELS[listing.category] || listing.category}
             </span>
           )}
+          {listing.bookingStatus === "booked" && listing.bookedTill && (
+            <span className="absolute top-3 right-3 bg-red-600/90 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
+              Booked till{" "}
+              {new Date(listing.bookedTill).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          )}
         </div>
 
         {/* Card body – flex-grow so it fills remaining space */}
@@ -49,6 +58,16 @@ export default function ListingCard({ listing }) {
           <p className="text-gray-500 text-sm mt-1 line-clamp-1">
             {listing.location}, {listing.country}
           </p>
+          {listing.bookingStatus === "booked" && listing.bookedTill && (
+            <p className="text-sm text-red-600 mt-2">
+              Unavailable until{" "}
+              {new Date(listing.bookedTill).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+          )}
 
           {/* Price pinned to bottom */}
           <p className="font-bold text-gray-900 mt-auto pt-3">

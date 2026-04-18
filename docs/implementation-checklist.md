@@ -37,30 +37,30 @@ The sequence is optimized for:
 
 ### Booking logic
 
-- [ ] validate `checkInDate` and `checkOutDate`
-- [ ] compute `nights`
-- [ ] compute total price from listing price and selected nights
-- [ ] block owner from booking own listing if desired
-- [ ] implement overlap check for confirmed bookings
-- [ ] wrap booking create flow in a Mongo transaction
-- [ ] implement cancel booking flow
-- [ ] implement paginated `getMyBookings`
-- [ ] implement paginated `getHostBookings`
+- [x] validate `checkInDate` and `checkOutDate`
+- [x] compute `nights`
+- [x] compute total price from listing price and selected nights
+- [x] block owner from booking own listing if desired
+- [x] implement overlap check for confirmed bookings
+- [x] wrap booking create flow in a Mongo transaction
+- [x] implement cancel booking flow
+- [x] implement paginated `getMyBookings`
+- [x] implement paginated `getHostBookings`
 
 ### Frontend integration
 
-- [ ] decide whether to keep cart-based checkout first or add direct booking
-- [ ] connect cart checkout button to booking endpoint
-- [ ] handle booking success and failure states
-- [ ] clear cart item after success
+- [x] decide whether to keep cart-based checkout first or add direct booking
+- [x] connect cart checkout button to booking endpoint
+- [x] handle booking success and failure states
+- [x] clear cart item after success
 
 ## Phase 2: Availability And Listing Summary
 
-- [ ] add derived availability helper logic
-- [ ] decide how `bookedTill` should be computed
-- [ ] show booked state in listing detail
-- [ ] optionally show booked state in listing cards
-- [ ] ensure cancelled bookings reopen dates correctly
+- [x] add derived availability helper logic
+- [x] decide how `bookedTill` should be computed
+- [x] show booked state in listing detail
+- [x] optionally show booked state in listing cards
+- [x] ensure cancelled bookings reopen dates correctly
 
 ## Phase 3: Cache Redesign
 

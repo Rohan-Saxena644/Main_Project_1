@@ -12,6 +12,10 @@ function normalizeDate(value) {
   return date;
 }
 
+function startOfTodayUtc() {
+  return normalizeDate(new Date());
+}
+
 function buildBookingCode() {
   const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
   return `BK-${Date.now().toString(36).toUpperCase()}-${randomPart}`;
@@ -86,10 +90,15 @@ module.exports.createBooking = async (req, res) => {
   const { listingId, checkInDate, checkOutDate } = req.body;
   const normalizedCheckIn = normalizeDate(checkInDate);
   const normalizedCheckOut = normalizeDate(checkOutDate);
+  const today = startOfTodayUtc();
   const nights = Math.ceil((normalizedCheckOut - normalizedCheckIn) / MS_PER_DAY);
 
   if (nights < 1) {
     throw new ExpressError(400, "Check-out date must be after check-in date");
+  }
+
+  if (normalizedCheckIn < today) {
+    throw new ExpressError(400, "Check-in date cannot be in the past");
   }
 
   const session = await mongoose.startSession();

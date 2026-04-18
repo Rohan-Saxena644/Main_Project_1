@@ -33,6 +33,15 @@ export default function ListingDetails() {
     return diffDays > 0 ? diffDays : 0;
   };
 
+  const formatBookedTill = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const handleAddToCart = () => {
     if (!checkInDate || !checkOutDate) {
       alert("Please select check-in and check-out dates");
@@ -286,6 +295,12 @@ export default function ListingDetails() {
                 <p className="text-gray-700 leading-relaxed">{listing.description}</p>
               </div>
 
+              {listing.bookingStatus === "booked" && listing.bookedTill && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+                  Booked until {formatBookedTill(listing.bookedTill)}
+                </div>
+              )}
+
               {/* Owner Actions */}
               {isOwner && (
                 <div className="flex gap-3 mt-6 pt-6 border-t">
@@ -425,6 +440,13 @@ export default function ListingDetails() {
               </div>
 
               <div className="space-y-4">
+                {listing.bookingStatus === "booked" && listing.bookedTill && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    This listing is currently marked booked until {formatBookedTill(listing.bookedTill)}.
+                    Final date validation still happens when you confirm a booking.
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Check-in</label>
                   <input
@@ -462,10 +484,10 @@ export default function ListingDetails() {
 
                 <button
                   onClick={handleAddToCart}
-                  disabled={!user}
+                  disabled={!user || isOwner}
                   className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
-                  {user ? '🛒 Add to Cart' : 'Login to Book'}
+                  {!user ? "Login to Book" : isOwner ? "You Own This Listing" : "Add to Cart"}
                 </button>
 
                 {!user && (
