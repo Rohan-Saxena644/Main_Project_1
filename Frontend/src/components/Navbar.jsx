@@ -17,7 +17,7 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-    navigate(`/listings?search=${query.trim()}`);
+    navigate(`/listings?search=${encodeURIComponent(query.trim())}&page=1`);
     setIsMobileMenuOpen(false);
   };
 

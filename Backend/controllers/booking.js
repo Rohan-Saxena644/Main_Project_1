@@ -12,6 +12,10 @@ const {
   availKey,
   invalidateAllForListing,
 } = require("../utils/cache");
+const {
+  normalizeListingAvailabilityData,
+  refreshListingBookingSummary,
+} = require("../utils/listingAvailability");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -54,29 +58,6 @@ function buildHistoryFilter(baseQuery, status) {
       return baseQuery;
   }
 }
-
-async function refreshListingBookingSummary(listingId, session) {
-  const now = new Date();
-
-  const activeBookings = await Booking.find({
-    listing: listingId,
-    status: "confirmed",
-    checkOutDate: { $gt: now },
-  })
-    .sort({ checkOutDate: -1 })
-    .session(session);
-
-  await Listing.findByIdAndUpdate(
-    listingId,
-    {
-      bookedTill: activeBookings.length > 0 ? activeBookings[0].checkOutDate : null,
-      bookingStatus: activeBookings.length > 0 ? "booked" : "available",
-      activeBookingCount: activeBookings.length,
-    },
-    { session }
-  );
-}
-
 
 async function invalidateListingCaches(listingId) {
   await invalidateAllForListing(listingId);
@@ -276,6 +257,7 @@ module.exports.getListingAvailability = async (req, res) => {
   const key = availKey(listingId);
   const cached = await cacheGet(key);
   if (cached) {
+    normalizeListingAvailabilityData(cached);
     
     const isAvailable = !cached.bookedRanges?.some(
       (range) =>
@@ -295,6 +277,7 @@ module.exports.getListingAvailability = async (req, res) => {
     "_id bookedTill bookingStatus"
   );
   if (!listing) throw new ExpressError(404, "Listing not found");
+  normalizeListingAvailabilityData(listing);
 
   
   const now = new Date();

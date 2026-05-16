@@ -254,6 +254,10 @@ export default function ListingDetails() {
   }
 
   const isOwner = user && listing.owner?._id === user._id;
+  const showBookedState =
+    listing.bookingStatus === "booked" &&
+    listing.bookedTill &&
+    new Date(listing.bookedTill) > new Date();
 
   // Calculate average rating
   const avgRating = listing.reviews?.length > 0
@@ -345,7 +349,7 @@ export default function ListingDetails() {
                 <p className="text-gray-700 leading-relaxed">{listing.description}</p>
               </div>
 
-              {listing.bookingStatus === "booked" && listing.bookedTill && (
+              {showBookedState && (
                 <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
                   Booked until {formatBookedTill(listing.bookedTill)}
                 </div>
@@ -490,7 +494,7 @@ export default function ListingDetails() {
               </div>
 
               <div className="space-y-4">
-                {listing.bookingStatus === "booked" && listing.bookedTill && (
+                {showBookedState && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     This listing is currently marked booked until {formatBookedTill(listing.bookedTill)}.
                     Final date validation still happens when you confirm a booking.

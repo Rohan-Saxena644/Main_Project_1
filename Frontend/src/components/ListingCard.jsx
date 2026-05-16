@@ -12,6 +12,11 @@ const CATEGORY_LABELS = {
 };
 
 export default function ListingCard({ listing }) {
+  const showBookedState =
+    listing.bookingStatus === "booked" &&
+    listing.bookedTill &&
+    new Date(listing.bookedTill) > new Date();
+
   return (
     <Link to={`/listings/${listing._id}`} className="block group h-full">
       {/* 
@@ -37,7 +42,7 @@ export default function ListingCard({ listing }) {
               {CATEGORY_LABELS[listing.category] || listing.category}
             </span>
           )}
-          {listing.bookingStatus === "booked" && listing.bookedTill && (
+          {showBookedState && (
             <span className="absolute top-3 right-3 bg-red-600/90 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
               Booked till{" "}
               {new Date(listing.bookedTill).toLocaleDateString("en-US", {
@@ -58,7 +63,7 @@ export default function ListingCard({ listing }) {
           <p className="text-gray-500 text-sm mt-1 line-clamp-1">
             {listing.location}, {listing.country}
           </p>
-          {listing.bookingStatus === "booked" && listing.bookedTill && (
+          {showBookedState && (
             <p className="text-sm text-red-600 mt-2">
               Unavailable until{" "}
               {new Date(listing.bookedTill).toLocaleDateString("en-US", {

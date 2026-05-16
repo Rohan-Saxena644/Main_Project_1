@@ -19,7 +19,13 @@ export default function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    navigate(`/listings${searchQuery.trim() ? `?search=${encodeURIComponent(searchQuery.trim())}` : ""}`);
+    navigate(
+      `/listings${
+        searchQuery.trim()
+          ? `?search=${encodeURIComponent(searchQuery.trim())}&page=1`
+          : "?page=1"
+      }`
+    );
   };
 
   const particles = useMemo(() =>

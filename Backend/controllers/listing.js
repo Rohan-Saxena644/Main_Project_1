@@ -6,6 +6,11 @@ const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 const { cloudinary } = require("../cloudConfig.js");
 const { timeQuery } = require("../utils/queryMetrics");
+const {
+  clearExpiredBookedStatuses,
+  normalizeListingAvailabilityData,
+  normalizeListingCollection,
+} = require("../utils/listingAvailability");
 
 const {
   cacheGet,
@@ -20,9 +25,16 @@ const {
 
 module.exports.index = async (req, res) => {
   const { search, category } = req.query;
-  const key = await listKey({ search, category });
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 28));
+  const skip = (page - 1) * limit;
+
+  await clearExpiredBookedStatuses();
+
+  const key = await listKey({ search, category, page, limit });
   const cached = await cacheGet(key);
   if (cached) {
+    cached.listings = normalizeListingCollection(cached.listings || []);
     return res.json(cached);
   }
 
@@ -32,7 +44,8 @@ module.exports.index = async (req, res) => {
     baseQuery.category = category;
   }
 
-  let allListings;
+  let listings = [];
+  let total = 0;
 
   if (normalizedSearch) {
     const textSearchQuery = {
@@ -40,14 +53,18 @@ module.exports.index = async (req, res) => {
       $text: { $search: normalizedSearch },
     };
 
-    allListings = await timeQuery("listings.index.textSearch", () =>
-      Listing.find(
-        textSearchQuery,
-        { score: { $meta: "textScore" } }
-      ).sort({ score: { $meta: "textScore" } })
+    total = await timeQuery("listings.index.textSearchCount", () =>
+      Listing.countDocuments(textSearchQuery)
     );
 
-    if (allListings.length === 0) {
+    listings = await timeQuery("listings.index.textSearch", () =>
+      Listing.find(textSearchQuery, { score: { $meta: "textScore" } })
+        .sort({ score: { $meta: "textScore" }, createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit)
+    );
+
+    if (total === 0) {
       const regexQuery = {
         ...baseQuery,
         $or: [
@@ -57,18 +74,37 @@ module.exports.index = async (req, res) => {
         ],
       };
 
-      allListings = await timeQuery("listings.index.regexFallback", () =>
-        Listing.find(regexQuery)
+      total = await timeQuery("listings.index.regexFallbackCount", () =>
+        Listing.countDocuments(regexQuery)
+      );
+
+      listings = await timeQuery("listings.index.regexFallback", () =>
+        Listing.find(regexQuery).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit)
       );
     }
   } else {
-    allListings = await timeQuery("listings.index.default", () =>
-      Listing.find(baseQuery)
+    total = await timeQuery("listings.index.defaultCount", () =>
+      Listing.countDocuments(baseQuery)
+    );
+
+    listings = await timeQuery("listings.index.default", () =>
+      Listing.find(baseQuery).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit)
     );
   }
 
-  await cacheSet(key, allListings, TTL.list);
-  res.json(allListings);
+  const normalizedListings = normalizeListingCollection(listings);
+  const payload = {
+    listings: normalizedListings,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  };
+
+  await cacheSet(key, payload, TTL.list);
+  res.json(payload);
 };
 
 
@@ -78,6 +114,9 @@ module.exports.showListing = async (req, res) => {
   const key = detailKey(id);
   const cached = await cacheGet(key);
   if (cached) {
+    if (cached.listing) {
+      normalizeListingAvailabilityData(cached.listing);
+    }
     return res.json(cached);
   }
 
@@ -94,6 +133,7 @@ module.exports.showListing = async (req, res) => {
     return res.status(404).json({ error: "Listing not found" });
   }
 
+  normalizeListingAvailabilityData(listing);
   await cacheSet(key, { listing }, TTL.detail);
   res.json({ listing });
 };
