@@ -83,16 +83,28 @@ export default function Listings() {
 
         const res = await api.get("/listings", { params });
         const data = res.data;
-
-        setListings(Array.isArray(data.listings) ? data.listings : []);
-        setPagination(
+        const nextPagination =
           data.pagination || {
             page: currentPage,
             limit: PAGE_SIZE,
             total: 0,
             totalPages: 1,
-          }
-        );
+          };
+
+        if (
+          nextPagination.total > 0 &&
+          Array.isArray(data.listings) &&
+          data.listings.length === 0 &&
+          currentPage > nextPagination.totalPages
+        ) {
+          updateParams((nextParams) => {
+            nextParams.set("page", String(nextPagination.totalPages || 1));
+          });
+          return;
+        }
+
+        setListings(Array.isArray(data.listings) ? data.listings : []);
+        setPagination(nextPagination);
       } catch (err) {
         console.error("Failed to fetch listings:", err);
         setListings([]);
