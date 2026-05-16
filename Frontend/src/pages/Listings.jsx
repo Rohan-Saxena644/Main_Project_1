@@ -83,27 +83,38 @@ export default function Listings() {
 
         const res = await api.get("/listings", { params });
         const data = res.data;
-        const listingsData = Array.isArray(data)
+        const isLegacyArray = Array.isArray(data);
+        const isLegacyObjectArray = !isLegacyArray && Array.isArray(data.allListings);
+        const rawListingsData = isLegacyArray
           ? data
           : Array.isArray(data.listings)
           ? data.listings
-          : Array.isArray(data.allListings)
+          : isLegacyObjectArray
           ? data.allListings
           : [];
 
-        const nextPagination = Array.isArray(data)
-          ? {
-              page: currentPage,
-              limit: PAGE_SIZE,
-              total: data.length,
-              totalPages: Math.max(1, Math.ceil(data.length / PAGE_SIZE)),
-            }
-          : data.pagination || {
-              page: currentPage,
-              limit: PAGE_SIZE,
-              total: listingsData.length,
-              totalPages: Math.max(1, Math.ceil(listingsData.length / PAGE_SIZE)),
-            };
+        const nextPagination =
+          isLegacyArray || isLegacyObjectArray
+            ? {
+                page: currentPage,
+                limit: PAGE_SIZE,
+                total: rawListingsData.length,
+                totalPages: Math.max(1, Math.ceil(rawListingsData.length / PAGE_SIZE)),
+              }
+            : data.pagination || {
+                page: currentPage,
+                limit: PAGE_SIZE,
+                total: rawListingsData.length,
+                totalPages: Math.max(1, Math.ceil(rawListingsData.length / PAGE_SIZE)),
+              };
+
+        const listingsData =
+          isLegacyArray || isLegacyObjectArray
+            ? rawListingsData.slice(
+                (currentPage - 1) * PAGE_SIZE,
+                currentPage * PAGE_SIZE
+              )
+            : rawListingsData;
 
         if (
           nextPagination.total > 0 &&
