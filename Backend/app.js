@@ -79,11 +79,25 @@ app.use("/api", generalLimiter);
 
 
 // =======================
+// HEALTH CHECK
+// Keep this above session middleware so the frontend wake-up timer
+// is never blocked by auth/session store issues.
+// =======================
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: Date.now(),
+    message: "Server is awake"
+  });
+});
+
+
+// =======================
 // SESSION STORE
 // =======================
 
-const redisUrl =
-  process.env.REDIS_URL || (!isProduction ? "redis://127.0.0.1:6379" : "");
+const redisUrl = process.env.REDIS_URL || "";
 
 const store = redisUrl
   ? new RedisSessionStore({ redisUrl })
@@ -141,18 +155,6 @@ passport.deserializeUser(User.deserializeUser());
 
 
 app.use(sessionTimeout);
-
-// =======================
-// HEALTH CHECK
-// =======================
-
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    timestamp: Date.now(),
-    message: "Server is awake"
-  });
-});
 
 
 // =======================
