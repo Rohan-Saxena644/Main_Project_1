@@ -1,6 +1,7 @@
 
 const Listing = require("../models/listing.js");
 const Review = require("../models/review.js");
+const { invalidateListingDetail } = require("../utils/cache");
 
 
 module.exports.createReview = async (req, res, next) => {
@@ -17,6 +18,7 @@ module.exports.createReview = async (req, res, next) => {
 
     await newReview.save();
     await listing.save();
+    await invalidateListingDetail(req.params.id);
 
     res.status(201).json({
       message: "New review created successfully",
@@ -44,6 +46,7 @@ module.exports.destroyReview = async (req, res, next) => {
     }
 
     await Review.findByIdAndDelete(reviewId);
+    await invalidateListingDetail(id);
 
     res.json({ message: "Review deleted successfully" });
 
