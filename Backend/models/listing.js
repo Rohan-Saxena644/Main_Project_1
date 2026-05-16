@@ -73,6 +73,18 @@ const listingSchema = new Schema({
         default: 0,
         min: 0,
     },
+}, { timestamps: true });
+
+listingSchema.index({ category: 1, price: 1 });
+listingSchema.index({ owner: 1, createdAt: -1 });
+listingSchema.index({ bookingStatus: 1, bookedTill: 1 });
+listingSchema.index({ country: 1, location: 1 });
+listingSchema.index({ geometry: "2dsphere" });
+listingSchema.index({
+    title: "text",
+    description: "text",
+    location: "text",
+    country: "text",
 });
 
 listingSchema.post("findOneAndDelete", async (listing) => {

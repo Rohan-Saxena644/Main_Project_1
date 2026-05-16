@@ -1,13 +1,3 @@
-/**
- * controllers/booking.js
- *
- * Cache changes from Phase 3:
- *   - invalidateListingCaches now calls invalidateAllForListing()
- *     which busts detail + availability + bumps list version — no KEYS scan
- *   - getListingAvailability now has its own cache layer using availKey()
- *     with a short 2-minute TTL (it's the most-read, most-invalidated key)
- *   - buildBookingCode uses crypto.randomBytes instead of Math.random
- */
 
 const mongoose = require("mongoose");
 const crypto = require("crypto");
@@ -25,9 +15,6 @@ const {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// -----------------------------------------------------------------
-// Date helpers
-// -----------------------------------------------------------------
 function normalizeDate(value) {
   const date = new Date(value);
   date.setUTCHours(0, 0, 0, 0);
@@ -38,15 +25,12 @@ function startOfTodayUtc() {
   return normalizeDate(new Date());
 }
 
-// Crypto-safe booking code — replaces the old Math.random() version
 function buildBookingCode() {
   const randomPart = crypto.randomBytes(4).toString("hex").toUpperCase();
   return `BK-${Date.now().toString(36).toUpperCase()}-${randomPart}`;
 }
 
-// -----------------------------------------------------------------
-// Filter builder for booking history queries
-// -----------------------------------------------------------------
+
 function buildHistoryFilter(baseQuery, status) {
   const now = new Date();
 
@@ -71,10 +55,6 @@ function buildHistoryFilter(baseQuery, status) {
   }
 }
 
-// -----------------------------------------------------------------
-// Derived listing fields — runs inside the same Mongo session
-// as the booking write so it's atomic
-// -----------------------------------------------------------------
 async function refreshListingBookingSummary(listingId, session) {
   const now = new Date();
 
@@ -97,21 +77,12 @@ async function refreshListingBookingSummary(listingId, session) {
   );
 }
 
-// -----------------------------------------------------------------
-// Cache invalidation — called after every booking write
-//
-// invalidateAllForListing does three things in parallel:
-//   1. DEL listing:detail:<id>
-//   2. DEL listing:avail:<id>
-//   3. INCR listing:list:version  (bumps version, no KEYS scan)
-// -----------------------------------------------------------------
+
 async function invalidateListingCaches(listingId) {
   await invalidateAllForListing(listingId);
 }
 
-// -----------------------------------------------------------------
-// POST /api/bookings
-// -----------------------------------------------------------------
+
 module.exports.createBooking = async (req, res) => {
   const { listingId, checkInDate, checkOutDate } = req.body;
   const normalizedCheckIn = normalizeDate(checkInDate);
@@ -178,16 +149,12 @@ module.exports.createBooking = async (req, res) => {
     await session.endSession();
   }
 
-  // Bust detail + availability + list version — outside the transaction
-  // because cache is not part of the DB transaction boundary
   await invalidateListingCaches(listingId);
 
   res.status(201).json({ message: "Booking confirmed", booking });
 };
 
-// -----------------------------------------------------------------
-// GET /api/bookings/me
-// -----------------------------------------------------------------
+
 module.exports.getMyBookings = async (req, res) => {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
@@ -216,9 +183,6 @@ module.exports.getMyBookings = async (req, res) => {
   });
 };
 
-// -----------------------------------------------------------------
-// GET /api/bookings/host
-// -----------------------------------------------------------------
 module.exports.getHostBookings = async (req, res) => {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
@@ -247,9 +211,6 @@ module.exports.getHostBookings = async (req, res) => {
   });
 };
 
-// -----------------------------------------------------------------
-// GET /api/bookings/:id
-// -----------------------------------------------------------------
 module.exports.getBookingById = async (req, res) => {
   const { id } = req.params;
 
@@ -267,9 +228,7 @@ module.exports.getBookingById = async (req, res) => {
   res.json({ booking });
 };
 
-// -----------------------------------------------------------------
-// PATCH /api/bookings/:id/cancel
-// -----------------------------------------------------------------
+
 module.exports.cancelBooking = async (req, res) => {
   const { id } = req.params;
   const { cancellationReason } = req.body;
@@ -306,24 +265,18 @@ module.exports.cancelBooking = async (req, res) => {
   res.json({ message: "Booking cancelled successfully", booking });
 };
 
-// -----------------------------------------------------------------
-// GET /api/bookings/availability/:listingId
-//
-// Now cached with a 2-minute TTL.
-// Cache is busted by invalidateListingCaches (called on booking create/cancel).
-// -----------------------------------------------------------------
+
 module.exports.getListingAvailability = async (req, res) => {
   const { listingId } = req.params;
   const { checkInDate, checkOutDate } = req.query;
   const normalizedCheckIn = normalizeDate(checkInDate);
   const normalizedCheckOut = normalizeDate(checkOutDate);
 
-  // Check availability cache first — short TTL because bookings change it often
+  
   const key = availKey(listingId);
   const cached = await cacheGet(key);
   if (cached) {
-    // Re-run the overlap check against the cached booked ranges
-    // instead of hitting Mongo on every date picker change
+    
     const isAvailable = !cached.bookedRanges?.some(
       (range) =>
         normalizedCheckIn < new Date(range.checkOutDate) &&
@@ -337,14 +290,13 @@ module.exports.getListingAvailability = async (req, res) => {
     });
   }
 
-  // Cache miss — query DB
+
   const listing = await Listing.findById(listingId).select(
     "_id bookedTill bookingStatus"
   );
   if (!listing) throw new ExpressError(404, "Listing not found");
 
-  // Fetch all future confirmed bookings for this listing
-  // so we can cache the booked ranges and check any date pair locally
+  
   const now = new Date();
   const bookedRanges = await Booking.find({
     listing: listingId,
@@ -352,8 +304,7 @@ module.exports.getListingAvailability = async (req, res) => {
     checkOutDate: { $gt: now },
   }).select("checkInDate checkOutDate");
 
-  // Store ranges in cache — availability checks for any date pair
-  // can now be answered from cache without a DB query
+
   await cacheSet(
     key,
     {

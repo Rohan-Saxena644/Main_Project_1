@@ -1,21 +1,11 @@
-/**
- * controllers/listing.js
- *
- * Cache changes from Phase 3:
- *   - import new named helpers instead of raw cacheDel
- *   - index() uses versioned listKey() — no more hardcoded string + no KEYS scan
- *   - showListing() uses detailKey()
- *   - createListing() calls invalidateListingList()
- *   - updateListing() calls invalidateListingDetail + invalidateListingList
- *   - destroyListing() calls invalidateListingDetail + invalidateListingList
- *   - all TTLs come from the TTL config object in cache.js
- */
+
 
 const Listing = require("../models/listing");
 const mbxGeocoding = require("@mapbox/mapbox-sdk/services/geocoding");
 const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 const { cloudinary } = require("../cloudConfig.js");
+const { timeQuery } = require("../utils/queryMetrics");
 
 const {
   cacheGet,
@@ -27,42 +17,61 @@ const {
   invalidateListingList,
 } = require("../utils/cache");
 
-// -----------------------------------------------------------------
-// GET /api/listings
-// -----------------------------------------------------------------
+
 module.exports.index = async (req, res) => {
   const { search, category } = req.query;
-
-  // listKey() reads the current version from Redis and hashes the filter.
-  // If another listing is created/updated/deleted while this is cached,
-  // invalidateListingList() increments the version and this key is
-  // never read again. No KEYS scan, no DEL needed.
   const key = await listKey({ search, category });
   const cached = await cacheGet(key);
   if (cached) {
     return res.json(cached);
   }
 
-  let query = {};
-  if (search) {
-    query.$or = [
-      { title:   { $regex: search, $options: "i" } },
-      { location: { $regex: search, $options: "i" } },
-      { country:  { $regex: search, $options: "i" } },
-    ];
-  }
+  const normalizedSearch = search?.trim();
+  const baseQuery = {};
   if (category && category !== "all") {
-    query.category = category;
+    baseQuery.category = category;
   }
 
-  const allListings = await Listing.find(query);
+  let allListings;
+
+  if (normalizedSearch) {
+    const textSearchQuery = {
+      ...baseQuery,
+      $text: { $search: normalizedSearch },
+    };
+
+    allListings = await timeQuery("listings.index.textSearch", () =>
+      Listing.find(
+        textSearchQuery,
+        { score: { $meta: "textScore" } }
+      ).sort({ score: { $meta: "textScore" } })
+    );
+
+    if (allListings.length === 0) {
+      const regexQuery = {
+        ...baseQuery,
+        $or: [
+          { title: { $regex: normalizedSearch, $options: "i" } },
+          { location: { $regex: normalizedSearch, $options: "i" } },
+          { country: { $regex: normalizedSearch, $options: "i" } },
+        ],
+      };
+
+      allListings = await timeQuery("listings.index.regexFallback", () =>
+        Listing.find(regexQuery)
+      );
+    }
+  } else {
+    allListings = await timeQuery("listings.index.default", () =>
+      Listing.find(baseQuery)
+    );
+  }
+
   await cacheSet(key, allListings, TTL.list);
   res.json(allListings);
 };
 
-// -----------------------------------------------------------------
-// GET /api/listings/:id
-// -----------------------------------------------------------------
+
 module.exports.showListing = async (req, res) => {
   const { id } = req.params;
 
@@ -72,12 +81,14 @@ module.exports.showListing = async (req, res) => {
     return res.json(cached);
   }
 
-  const listing = await Listing.findById(id)
-    .populate({
-      path: "reviews",
-      populate: { path: "author" },
-    })
-    .populate("owner");
+  const listing = await timeQuery("listings.showListing", () =>
+    Listing.findById(id)
+      .populate({
+        path: "reviews",
+        populate: { path: "author" },
+      })
+      .populate("owner")
+  );
 
   if (!listing) {
     return res.status(404).json({ error: "Listing not found" });
@@ -87,9 +98,7 @@ module.exports.showListing = async (req, res) => {
   res.json({ listing });
 };
 
-// -----------------------------------------------------------------
-// POST /api/listings
-// -----------------------------------------------------------------
+
 module.exports.createListing = async (req, res, next) => {
   try {
     const response = await geocodingClient
@@ -118,8 +127,7 @@ module.exports.createListing = async (req, res, next) => {
 
     const savedListing = await newListing.save();
 
-    // A new listing means the list view is stale.
-    // Bump the version — no KEYS scan needed.
+
     await invalidateListingList();
 
     res.status(201).json({
@@ -131,9 +139,7 @@ module.exports.createListing = async (req, res, next) => {
   }
 };
 
-// -----------------------------------------------------------------
-// GET /api/listings/:id/edit  (returns current data for the edit form)
-// -----------------------------------------------------------------
+
 module.exports.renderEditForm = async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id);
@@ -143,9 +149,7 @@ module.exports.renderEditForm = async (req, res) => {
   res.json({ listing });
 };
 
-// -----------------------------------------------------------------
-// PUT /api/listings/:id
-// -----------------------------------------------------------------
+
 module.exports.updateListing = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -155,7 +159,6 @@ module.exports.updateListing = async (req, res, next) => {
       return res.status(404).json({ error: "Listing not found" });
     }
 
-    // Re-geocode only if location string changed
     if (
       req.body.listing.location &&
       req.body.listing.location !== listing.location
@@ -188,7 +191,7 @@ module.exports.updateListing = async (req, res, next) => {
       { new: true }
     );
 
-    // Delete images the user flagged for removal (never remove the first image)
+
     if (req.body.deleteImages && req.body.deleteImages.length > 0) {
       const mainFilename = listing.images[0]?.filename;
 
@@ -208,7 +211,7 @@ module.exports.updateListing = async (req, res, next) => {
       });
     }
 
-    // Reorder images if a new order was sent
+
     if (req.body.imageOrder) {
       const order = Array.isArray(req.body.imageOrder)
         ? req.body.imageOrder
@@ -222,7 +225,7 @@ module.exports.updateListing = async (req, res, next) => {
       await Listing.findByIdAndUpdate(id, { images: reordered });
     }
 
-    // Add new images (max 5 total)
+
     if (req.files && req.files.length > 0) {
       const currentCount = listing.images.length;
       const slots = 5 - currentCount;
@@ -242,8 +245,7 @@ module.exports.updateListing = async (req, res, next) => {
 
     const updatedListing = await Listing.findById(id);
 
-    // Bust the detail cache for this listing AND bump the list version.
-    // Both run in parallel — no KEYS scan involved in either.
+
     await Promise.all([
       invalidateListingDetail(id),
       invalidateListingList(),
@@ -255,14 +257,11 @@ module.exports.updateListing = async (req, res, next) => {
   }
 };
 
-// -----------------------------------------------------------------
-// DELETE /api/listings/:id
-// -----------------------------------------------------------------
+
 module.exports.destroyListing = async (req, res) => {
   const { id } = req.params;
   await Listing.findByIdAndDelete(id);
 
-  // Same pattern — bust the specific detail key and bump list version.
   await Promise.all([
     invalidateListingDetail(id),
     invalidateListingList(),

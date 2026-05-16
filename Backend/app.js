@@ -11,6 +11,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 const MongoStore = require("connect-mongo");
+const RedisSessionStore = require("./utils/redisSessionStore");
 const cors = require("cors");
 
 const listingRouter = require("./routes/listing.js");
@@ -81,13 +82,18 @@ app.use("/api", generalLimiter);
 // SESSION STORE
 // =======================
 
-const store = MongoStore.create({
-  mongoUrl: dburl,
-});
+const redisUrl =
+  process.env.REDIS_URL || (!isProduction ? "redis://127.0.0.1:6379" : "");
 
-store.on("error", (err) => {
-  console.log("Mongo session store error", err);
-});
+const store = redisUrl
+  ? new RedisSessionStore({ redisUrl })
+  : MongoStore.create({ mongoUrl: dburl });
+
+if (typeof store.on === "function") {
+  store.on("error", (err) => {
+    console.log("Session store error", err);
+  });
+}
 
 // const sessionOptions = {
 //   store,

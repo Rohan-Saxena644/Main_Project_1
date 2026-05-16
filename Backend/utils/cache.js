@@ -30,7 +30,7 @@ function getClient() {
 
     client.on("error", (err) => {
       console.warn("Redis error (cache disabled):", err.message);
-      client = null; // reset so next request retries
+      client = null; 
     });
 
     console.log("Redis cache connected.");
@@ -43,17 +43,15 @@ function getClient() {
 
 
 
-/** Full listing document + reviews + owner */
 function detailKey(id) {
   return `listing:detail:${id}`;
 }
 
-/** Availability state for a specific listing */
+
 function availKey(id) {
-  return `listing:avail:${id}`;
+  return `listing:availability:${id}`;
 }
 
-/** The integer version counter for all list queries */
 function listVersionKey() {
   return `listing:list:version`;
 }
@@ -91,8 +89,9 @@ async function listKey(filterObj) {
   return `listing:list:v${version}:${hash}`;
 }
 
+
 function featuredKey() {
-  return `listing:featured`;
+  return `home:featured`;
 }
 
 
@@ -130,12 +129,12 @@ async function cacheDel(...keys) {
 
 
 
-/** Called when a listing is edited or deleted */
+
 async function invalidateListingDetail(id) {
   await cacheDel(detailKey(id));
 }
 
-/** Called when a booking is created or cancelled for a listing */
+
 async function invalidateListingAvailability(id) {
   await cacheDel(availKey(id));
 }
@@ -169,25 +168,20 @@ async function invalidateAllForListing(listingId) {
   ]);
 }
 
-// -----------------------------------------------------------------
-// Exports
-// -----------------------------------------------------------------
+
 module.exports = {
-  // primitives
+
   cacheGet,
   cacheSet,
   cacheDel,
-
-  // TTL constants
+  
   TTL,
 
-  // key builders
   detailKey,
   availKey,
   listKey,
   featuredKey,
 
-  // invalidation helpers
   invalidateListingDetail,
   invalidateListingAvailability,
   invalidateListingList,

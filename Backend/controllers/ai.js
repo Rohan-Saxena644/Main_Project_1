@@ -1,20 +1,14 @@
-/**
- * controllers/ai.js
- *
- * AI-powered natural language listing search.
- * Uses Google Gemini 3 (gemini-3-flash-preview) via the @google/genai SDK.
- */
+
 
 const { GoogleGenAI } = require("@google/genai");
 const Listing = require("../models/listing.js");
 
-// Client initialization
 const getAIClient = () => {
     if (!process.env.GEMINI_API_KEY) return null;
     return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 };
 
-// ── System prompt ──
+
 const SYSTEM_PROMPT = `
 You are a travel listing search assistant for "Wanderlust".
 Extract structured search filters from the user's natural language request.
@@ -50,7 +44,6 @@ module.exports.aiSearch = async (req, res) => {
     }
 
     try {
-        // ── Step 1: Generate structured filters using Gemini 3 ──
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: [{
@@ -64,7 +57,6 @@ module.exports.aiSearch = async (req, res) => {
 
         const filters = JSON.parse(response.candidates[0].content.parts[0].text);
 
-        // ── Step 2: Build MongoDB query ──
         const mongoQuery = {};
 
         if (filters.category && filters.category !== "null" && filters.category !== null) {
@@ -82,7 +74,6 @@ module.exports.aiSearch = async (req, res) => {
             mongoQuery.$or = [{ location: rx }, { country: rx }, { title: rx }];
         }
 
-        // ── Step 3: Fetch listings ──
         const listings = await Listing.find(mongoQuery).limit(24).sort({ _id: -1 });
 
         res.json({

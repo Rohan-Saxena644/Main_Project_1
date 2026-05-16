@@ -3,9 +3,6 @@ const User = require("../models/user.js");
 const isProduction = process.env.NODE_ENV === "production";
 
 
-// =======================
-// SIGNUP
-// =======================
 module.exports.signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
@@ -13,7 +10,7 @@ module.exports.signup = async (req, res, next) => {
     const newUser = new User({ email, username });
     const registeredUser = await User.register(newUser, password);
 
-    // Auto login after signup (passport session)
+  
     req.login(registeredUser, (err) => {
       if (err) return next(err);
 
@@ -33,43 +30,9 @@ module.exports.signup = async (req, res, next) => {
 };
 
 
-// =======================
-// LOGIN - FIXED
-// =======================
-// module.exports.login = async (req, res) => {
-//   // Passport has already authenticated and set req.user
-//   // We need to manually re-login after regeneration
 
-//   const user = req.user;
-
-//   req.session.regenerate((err) => {
-//     if (err) {
-//       return res.status(500).json({ error: "Session error" });
-//     }
-
-//     // CRITICAL: Must call req.login() again after regenerate
-//     // This re-establishes the Passport session
-//     req.login(user, (err) => {
-//       if (err) {
-//         return res.status(500).json({ error: "Login failed" });
-//       }
-
-//       res.json({
-//         message: "Login successful",
-//         user: {
-//           id: user._id,
-//           username: user.username,
-//           email: user.email
-//         }
-//       });
-//     });
-//   });
-// };
-
-
-// controllers/user.js
 module.exports.login = async (req, res) => {
-  // If passport.authenticate("local") succeeds, req.user is already populated
+
   const user = req.user;
 
   res.json({
@@ -83,21 +46,16 @@ module.exports.login = async (req, res) => {
 };
 
 
-// =======================
-// LOGOUT
-// =======================
 module.exports.logout = (req, res, next) => {
 
   req.logout((err) => {
     if (err) return next(err);
 
-    // Destroy session completely
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
       }
 
-      // Clear the session cookie
       res.clearCookie('connect.sid', {
         path: '/',
         httpOnly: true,
@@ -111,9 +69,7 @@ module.exports.logout = (req, res, next) => {
 };
 
 
-// =======================
-// CHECK AUTH STATUS
-// =======================
+
 module.exports.checkAuth = (req, res) => {
   if (req.isAuthenticated()) {
     res.json({
@@ -130,9 +86,7 @@ module.exports.checkAuth = (req, res) => {
 };
 
 
-// =======================
-// OWN PROFILE (logged-in user)
-// =======================
+
 module.exports.getOwnProfile = async (req, res) => {
   const Listing = require("../models/listing.js");
   const listings = await Listing.find({ owner: req.user._id }).sort({ _id: -1 });
@@ -147,9 +101,6 @@ module.exports.getOwnProfile = async (req, res) => {
 };
 
 
-// =======================
-// PUBLIC PROFILE (by username)
-// =======================
 module.exports.getPublicProfile = async (req, res) => {
   const Listing = require("../models/listing.js");
   const { username } = req.params;

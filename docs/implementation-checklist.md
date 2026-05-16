@@ -2,30 +2,30 @@
 
 ## Goal
 
-Use this as the execution order for the next phase of work on the `update` branch.
+Use this checklist to track the completed booking, availability, caching, session, and query-performance work on the `update` branch.
 
-The sequence is optimized for:
+The sequence followed this order:
 
 - correctness first
-- low-risk integration with the current repo
-- clear cache redesign after bookings exist
-- smooth move from Mongo session store to Redis session store
+- booking domain before cache redesign
+- availability-aware invalidation after bookings existed
+- Redis-backed infra before final performance cleanup
 
 ## Phase 0: Branch And Baseline
 
 - [x] create `update` branch
-- [DONE] confirm app still starts on the new branch
-- [Kind of Done will re see wih postman later] capture current API behavior for listing read endpoints
-- [noted TTl is 5 mins for everything and currently only two main cache keys] note current cache keys and TTL behavior
+- [x] keep app working on the new branch while developing features
+- [x] document the original cache shape and TTL limitations before redesign
+- [x] keep a phased execution plan in `docs/`
 
 ## Phase 1: Add Booking Domain
 
 ### Backend model work
 
-- [</] create `Backend/models/booking.js`
-- [</] define booking schema fields
+- [x] create `Backend/models/booking.js`
+- [x] define booking schema fields
 - [x] add indexes for listing/date/status and user booking history
-- [x] decide whether to add derived fields to `Listing`
+- [x] add derived availability helper fields to `Listing`
 
 ### Backend API work
 
@@ -40,7 +40,7 @@ The sequence is optimized for:
 - [x] validate `checkInDate` and `checkOutDate`
 - [x] compute `nights`
 - [x] compute total price from listing price and selected nights
-- [x] block owner from booking own listing if desired
+- [x] block owner from booking own listing
 - [x] implement overlap check for confirmed bookings
 - [x] wrap booking create flow in a Mongo transaction
 - [x] implement cancel booking flow
@@ -49,84 +49,78 @@ The sequence is optimized for:
 
 ### Frontend integration
 
-- [x] decide whether to keep cart-based checkout first or add direct booking
+- [x] keep cart-based checkout as the first booking flow
 - [x] connect cart checkout button to booking endpoint
 - [x] handle booking success and failure states
-- [x] clear cart item after success
+- [x] clear successful cart items after booking
+- [x] add profile booking history section with cancel action
 
 ## Phase 2: Availability And Listing Summary
 
 - [x] add derived availability helper logic
-- [x] decide how `bookedTill` should be computed
+- [x] compute `bookedTill` from active confirmed bookings
 - [x] show booked state in listing detail
-- [x] optionally show booked state in listing cards
+- [x] show booked state in listing cards
 - [x] ensure cancelled bookings reopen dates correctly
+- [x] prevent unavailable date ranges from being added to cart
+- [x] keep cart badge scoped to the authenticated user
 
 ## Phase 3: Cache Redesign
 
 ### Refactor cache utility
 
-- [ ] add centralized cache key helpers
-- [ ] replace wildcard invalidation with versioned list cache keys
-- [ ] introduce separate detail and availability keys
-- [ ] keep TTL values configurable by key type
+- [x] add centralized cache key helpers
+- [x] replace wildcard invalidation with versioned list cache keys
+- [x] introduce separate detail and availability keys
+- [x] keep TTL values configurable by key type
 
-### Cache keys to implement
+### Cache keys implemented
 
-- [ ] `listing:detail:<id>`
-- [ ] `listing:availability:<id>`
-- [ ] `listing:list:v<version>:<filterHash>`
-- [ ] `home:featured`
+- [x] `listing:detail:<id>`
+- [x] `listing:availability:<id>`
+- [x] `listing:list:v<version>:<filterHash>`
+- [x] `home:featured`
 
 ### Controller updates
 
-- [ ] update listing controller to use new detail and list key patterns
-- [ ] add availability endpoint and cache layer
-- [ ] invalidate cache on booking create and cancel
-- [ ] invalidate cache on listing create, update, and delete
+- [x] update listing controller to use new detail and list key patterns
+- [x] add availability endpoint and cache layer
+- [x] invalidate cache on booking create and cancel
+- [x] invalidate cache on listing create, update, and delete
 
-### Verification
+### Code-level verification
 
-- [ ] verify cache hit on repeated listing detail requests
-- [ ] verify list cache invalidates without `KEYS`
-- [ ] verify booking invalidates availability and detail data
+- [x] remove `KEYS`-based invalidation from the cache flow
+- [x] centralize list invalidation through version bumping
+- [x] target detail, availability, and list invalidation from booking events
 
 ## Phase 4: Session Store Migration To Redis
 
 ### Dependencies and setup
 
-- [ ] add Redis-backed session store package
-- [ ] decide on Redis provider for local and deployed use
-- [ ] add `REDIS_URL` to environment setup
-- [ ] add Redis service to `docker-compose.yml` if you want local container support
+- [x] add Redis-backed session storage implementation
+- [x] decide on Redis provider strategy for local and deployed use
+- [x] add `REDIS_URL` to environment setup
+- [x] add Redis service to `docker-compose.yml` for local container support
 
 ### App changes
 
-- [ ] replace `connect-mongo` session store in `Backend/app.js`
-- [ ] keep existing `express-session` configuration where possible
-- [ ] verify login, logout, and session timeout behavior
-- [ ] verify cookies still work cross-origin
+- [x] replace Mongo-first session storage with Redis-backed session storage in `Backend/app.js`
+- [x] keep existing `express-session` configuration where possible
+- [x] preserve environment-aware cookie behavior for localhost and production
+- [x] keep a safe Mongo fallback only when Redis is not configured
 
 ### Multi-instance readiness
 
-- [ ] confirm session persistence across restarts
-- [ ] confirm session behavior is safe for future load balancing
-
-## Phase 5: Messaging Foundation
-
-- [ ] create `Conversation` model
-- [ ] create `Message` model
-- [ ] add message routes and controller
-- [ ] allow host-guest conversation per listing
-- [ ] optionally attach conversation to booking
-- [ ] add unread tracking
+- [x] move session state out of per-process memory and out of Mongo-backed session documents
+- [x] align session storage with future load-balancer readiness
 
 ## Phase 6: Indexing And Query Performance
 
-- [ ] add listing indexes for common filters
-- [ ] add booking indexes for overlap and history queries
-- [ ] review regex search and plan upgrade path
-- [ ] measure slow queries before and after indexes
+- [x] add listing indexes for common filters and owner views
+- [x] keep booking indexes for overlap and history queries
+- [x] upgrade search path from regex-only to text-search-first with regex fallback
+- [x] add slow-query timing instrumentation for controller-level query review
 
 ## Deferred For Later
 
@@ -139,33 +133,23 @@ The sequence is optimized for:
 - [ ] add image optimization strategy
 - [ ] add CDN-backed image delivery
 - [ ] add background jobs for email and notifications
-- [ ] add rate limiting
 - [ ] add load balancer when multiple backend instances exist
 - [ ] add URL shortener later
 
-## Suggested Immediate Execution Order
+## Manual Smoke Pass Still Worth Doing
 
-Start with these concrete files first:
+- [ ] test cache hits with Redis running locally
+- [ ] test login persistence across backend restart with Redis running
+- [ ] test booking create and cancel once through the deployed stack after merge
 
-1. `Backend/models/booking.js`
-2. `Backend/controllers/booking.js`
-3. `Backend/routes/booking.js`
-4. `Backend/app.js`
-5. `Backend/utils/cache.js`
-6. `Backend/controllers/listing.js`
+## Definition Of Done For The Current Milestone
 
-Then move to:
-
-1. `Frontend/src/pages/Cart.jsx`
-2. `Frontend/src/context/CartContext.jsx`
-3. `Frontend/src/pages/ListingDetails.jsx`
-
-## Definition Of Done For The First Milestone
-
-The first milestone is complete when:
+The current milestone is complete when:
 
 - a user can create a booking from the current frontend flow
 - overlapping bookings for the same listing are rejected safely
 - listing availability updates correctly
-- listing cache invalidation happens on booking changes
-- sessions are stored in Redis instead of Mongo
+- unavailable dates cannot be added to cart
+- booking history is visible from profile
+- listing cache invalidation happens on booking and listing changes
+- sessions are stored through Redis-backed session storage
