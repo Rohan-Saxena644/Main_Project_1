@@ -83,18 +83,31 @@ export default function Listings() {
 
         const res = await api.get("/listings", { params });
         const data = res.data;
-        const nextPagination =
-          data.pagination || {
-            page: currentPage,
-            limit: PAGE_SIZE,
-            total: 0,
-            totalPages: 1,
-          };
+        const listingsData = Array.isArray(data)
+          ? data
+          : Array.isArray(data.listings)
+          ? data.listings
+          : Array.isArray(data.allListings)
+          ? data.allListings
+          : [];
+
+        const nextPagination = Array.isArray(data)
+          ? {
+              page: currentPage,
+              limit: PAGE_SIZE,
+              total: data.length,
+              totalPages: Math.max(1, Math.ceil(data.length / PAGE_SIZE)),
+            }
+          : data.pagination || {
+              page: currentPage,
+              limit: PAGE_SIZE,
+              total: listingsData.length,
+              totalPages: Math.max(1, Math.ceil(listingsData.length / PAGE_SIZE)),
+            };
 
         if (
           nextPagination.total > 0 &&
-          Array.isArray(data.listings) &&
-          data.listings.length === 0 &&
+          listingsData.length === 0 &&
           currentPage > nextPagination.totalPages
         ) {
           updateParams((nextParams) => {
@@ -103,7 +116,7 @@ export default function Listings() {
           return;
         }
 
-        setListings(Array.isArray(data.listings) ? data.listings : []);
+        setListings(listingsData);
         setPagination(nextPagination);
       } catch (err) {
         console.error("Failed to fetch listings:", err);
